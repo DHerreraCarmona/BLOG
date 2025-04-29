@@ -4,6 +4,11 @@ import { RegisterComponent } from './domains/users/pages/register/register.compo
 
 export const routes: Routes = [
     {
+        path: '',
+        redirectTo: 'login',
+        pathMatch: 'full' 
+      },
+    {
         path:'login',
         component: LoginComponent
     },
