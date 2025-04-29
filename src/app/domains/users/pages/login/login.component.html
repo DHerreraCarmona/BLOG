@@ -1,0 +1,38 @@
+<div class="w-screen h-screen bg-black flex items-center justify-center">
+    <div class="w-full max-w-md bg-black rounded-lg shadow-lg p-8 relative">
+        <div class="flex justify-center mb-6">
+            <img 
+                src="assets/logos/logo_h.png" 
+                class="relative w-100 self-center"
+                alt="logo"
+            />
+        </div>
+        <div class="flex flex-col items-center justify-center h-full">
+            <div class="w-96 bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+                <h2 class="text-center text-2xl font-bold mb-4">User Login</h2>
+                <form novalidate class="space-y-4" >
+                    <div class="relative mb-4">
+                        <label for="email" class="block text-gray-700 text-sm font-bold mb-2">Email</label>
+                        <input type="email" id="email" name="email" required 
+                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                        placeholder="Email" />
+                    </div>
+                    <div class="mb-6">
+                        <label for="password" class="block text-gray-700 text-sm font-bold mb-2">Password</label>
+                        <input type="password" id="password" name="password" required
+                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                        placeholder="Password" />
+                    </div>
+                    <div class="flex items-center justify-evenly">
+                        <app-btn [typeBtn]="'submit'" [color]="'success'">Login</app-btn>
+                        <app-btn [typeBtn]="'submit'" [color]="'danger'">Cancel</app-btn>
+                    </div>
+                </form>
+                <p class="text-center text-gray-500 text-xs mt-4">
+                    &copy;2023 me
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
