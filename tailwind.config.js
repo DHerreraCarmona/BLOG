@@ -1,18 +1,19 @@
 /** @type {import('tailwindcss').Config} */
-const colors = require('tailwindcss/colors');
-
 module.exports = {
   content: [
-    "./src/**/*.{html,ts}",
+    "./src/**/*.{html,ts,js,jsx,tsx}",
+    "./src/**/*.component.{html,ts}",
+    "./src/app/**/*.{html,ts}",
+    "./src/app/shared/**/*.{html,ts}"
   ],
   safelist: [
-    {
-      pattern: /bg-success-(100|200|300|400|500|600|700|800|900)/,
-      variants: ['hover', 'focus'],
-    },
-    {
-      pattern: /focus:ring-success-(100|200|300|400|500|600|700|800|900)/,
-    }
+    // Colores específicos para los botones
+    'bg-success-700', 'hover:bg-success-800', 'focus:ring-success-300',
+    'bg-primary-700', 'hover:bg-primary-800', 'focus:ring-primary-300',
+    'bg-danger-700', 'hover:bg-danger-800', 'focus:ring-danger-300',
+    'bg-sky-700', 'hover:bg-sky-800', 'focus:ring-sky-300',
+    'bg-gray-200', 'hover:bg-gray-500', 'focus:ring-gray-50',
+    'text-white', 'text-gray-700'
   ],
   theme: {
     extend: {

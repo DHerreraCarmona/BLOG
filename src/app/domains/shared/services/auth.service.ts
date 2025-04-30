@@ -12,7 +12,6 @@ export class AuthService {
 
   constructor(private http: HttpClient) {}
 
-  //  Usado por el interceptor
   getCsrfToken(): string | null {
     const match = document.cookie.match(/csrftoken=([^;]+)/);
     return match ? match[1] : null;
@@ -24,7 +23,6 @@ export class AuthService {
 
   login(username: string, password: string): Observable<any> {
     const csrfToken = this.getCsrfToken(); 
-    console.log('CSRF Token:', csrfToken);
   
     const body = new URLSearchParams();
     body.set('username', username);
@@ -69,4 +67,33 @@ export class AuthService {
   get isAuthenticated(): boolean {
     return this._authenticated;
   }
+
+
+  register(email: string, password: string): Observable<any> {
+    const csrfToken = this.getCsrfToken(); 
+
+    const body = new URLSearchParams();
+    body.set('email', email);
+    body.set('username', email.substring(0, email.indexOf('@')));
+    body.set('password', password);
+    body.set('group', 'default');
+  
+    return this.http.post(`${this.apiUrl}register/`, body.toString(), {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-CSRFToken': csrfToken ?? ''},
+      withCredentials: true  
+    })
+    .pipe(
+      tap(() => {
+        this._authenticated = true;
+        console.log('Register successful');
+      }),
+      catchError((error) => {
+        console.error('Register failed:', error);
+        this._authenticated = false;
+        return of(null);
+      })
+    );
+  }  
 }

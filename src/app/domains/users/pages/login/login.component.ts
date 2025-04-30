@@ -1,6 +1,7 @@
-import { Router } from '@angular/router';
+import {CommonModule} from '@angular/common'
 import { Component, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { Router,RouterLink, RouterOutlet} from '@angular/router';
 import { FormBuilder,FormsModule, Validators, ReactiveFormsModule } from '@angular/forms';
 
 import { AuthService } from '@shared/services/auth.service';
@@ -8,10 +9,12 @@ import { BtnComponent } from '@shared/components/btn/btn.component';
 import { environment } from "@env/enviroments.prod";
 
 
+
+
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [BtnComponent, ReactiveFormsModule, FormsModule], 
+  imports: [BtnComponent, ReactiveFormsModule, FormsModule,CommonModule,RouterLink], 
   templateUrl: './login.component.html',
 })
 export class LoginComponent implements OnInit{
@@ -41,32 +44,51 @@ export class LoginComponent implements OnInit{
       withCredentials: true
     }).subscribe(() => {});
   }
-  
-  onSubmit(): void {
-    if (this.form.valid) {
-      const { email, password } = this.form.getRawValue();
 
-      this.authService.login(email, password).subscribe({
-        next: () => {
-          this.status = 'success';
-          this.authService.checkAuth().subscribe(auth => {
-            if (auth) {
-              this.http.get('http://localhost:8000/api/post/')
-                .subscribe(response => {
-                  console.log(response);
-                });
-            } else {
-              this.router.navigate(['/login']);
-            }
-          });
-        },
-        error: (err) => {
-          console.error('Login fallido:', err);
-        }
-      });
-    } else {
-      this.form.markAllAsTouched();
-    }
+  togglePasswordVisibility(): void {
+    this.showPassword = !this.showPassword;
   }
   
+  resetForm(): void {
+    this.form.reset();
+    this.status = 'init';
+  }
+
+  onSubmit(): void {
+
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
+
+    this.status = 'loading';
+    const { email, password } = this.form.getRawValue();
+    this.authService.login(email, password).subscribe({
+      next: () => {
+        this.authService.checkAuth().subscribe({            
+          next:(auth) => {
+            if (auth) {
+              this.status = 'success';
+              this.router.navigate(['/']);
+            } else {
+                this.handleAuthError();
+            }
+          },
+          error: (err) => {
+            this.handleAuthError();
+          } 
+        });
+      },
+      error: (err) => {
+        this.handleAuthError();
+      } 
+    });
+
+  }
+  
+  private handleAuthError(): void {
+    this.status = 'error';
+    this.form.setErrors({ unauthenticated: true });
+    this.form.get('password')?.reset();
+  }
 }
