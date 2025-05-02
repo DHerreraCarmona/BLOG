@@ -1,5 +1,12 @@
+import { AuthorShort} from './author'
+
 export interface Comment {
-    post_id: number;
-    user_id: number;
+    author: AuthorShort;
+    content: string;
+    creaatedAt: string;
+}
+
+export interface createCommentModel {
+    author: AuthorShort;
     content: string;
 }

@@ -69,7 +69,7 @@ export class LoginComponent implements OnInit{
           next:(auth) => {
             if (auth) {
               this.status = 'success';
-              this.router.navigate(['/']);
+              this.router.navigate(['/posts']);
             } else {
                 this.handleAuthError();
             }

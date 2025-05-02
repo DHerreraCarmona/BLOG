@@ -1,4 +1,5 @@
+import { AuthorShort} from './author'
+
 export interface Like {
-    post_id: number;
-    user_id: number;
+    author: AuthorShort;
 }

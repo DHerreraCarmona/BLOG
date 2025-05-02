@@ -21,6 +21,21 @@ export class AuthService {
     return this.http.get(`${this.apiUrl}csrf/`, { withCredentials: true });
   }
 
+  checkAuth(): Observable<boolean> {
+    return this.http.get(`${this.apiUrl}me/`, { withCredentials: true }).pipe(
+      tap(() => this._authenticated = true),
+      map(() => true),
+      catchError(() => {
+        this._authenticated = false;
+        return of(false);
+      })
+    );
+  }
+
+  get isAuthenticated(): boolean {
+    return this._authenticated;
+  }
+
   login(username: string, password: string): Observable<any> {
     const csrfToken = this.getCsrfToken(); 
   
@@ -47,45 +62,23 @@ export class AuthService {
     );
   }  
 
-  logout(): Observable<any> {
-    return this.http.post(`${this.apiUrl}logout/`, {}, { withCredentials: true }).pipe(
-      tap(() => this._authenticated = false)
-    );
-  }
-
-  checkAuth(): Observable<boolean> {
-    return this.http.get(`${this.apiUrl}me/`, { withCredentials: true }).pipe(
-      tap(() => this._authenticated = true),
-      map(() => true),
-      catchError(() => {
-        this._authenticated = false;
-        return of(false);
-      })
-    );
-  }
-
-  get isAuthenticated(): boolean {
-    return this._authenticated;
-  }
-
-
   register(email: string, password: string): Observable<any> {
     const csrfToken = this.getCsrfToken(); 
-
+    
     const body = new URLSearchParams();
     body.set('email', email);
     body.set('username', email.substring(0, email.indexOf('@')));
     body.set('password', password);
     body.set('group', 'default');
-  
+    
     return this.http.post(`${this.apiUrl}register/`, body.toString(), {
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
         'X-CSRFToken': csrfToken ?? ''},
-      withCredentials: true  
-    })
-    .pipe(
-      tap(() => {
+        withCredentials: true  
+      })
+      .pipe(
+        tap(() => {
         this._authenticated = true;
         console.log('Register successful');
       }),
@@ -96,4 +89,10 @@ export class AuthService {
       })
     );
   }  
+
+  logout(): Observable<any> {
+    return this.http.post(`${this.apiUrl}logout/`, {}, { withCredentials: true }).pipe(
+      tap(() => this._authenticated = false)
+    );
+  }
 }
