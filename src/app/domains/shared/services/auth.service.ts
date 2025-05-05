@@ -1,9 +1,10 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
-import { map, tap, catchError } from 'rxjs/operators';
+import { map, tap, catchError, switchMap } from 'rxjs/operators';
 
 import { environment } from '@env/enviroments.prod';
+import { AuthorPost } from '@shared/models/author';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -36,6 +37,26 @@ export class AuthService {
     return this._authenticated;
   }
 
+  getUserApi(): Observable<AuthorPost> {
+    return this.http.get<AuthorPost>(`${this.apiUrl}me/`).pipe(
+      tap(user => {
+        localStorage.setItem('user', JSON.stringify(user));
+      })
+    );
+  }
+
+  getUser(): AuthorPost {
+    const user = localStorage.getItem('user');
+    if (user) {
+      return JSON.parse(user);
+    }
+    return {
+      id: 0,
+      username: '',
+      team: ''
+    };
+  }
+
   login(username: string, password: string): Observable<any> {
     const csrfToken = this.getCsrfToken(); 
   
@@ -50,6 +71,9 @@ export class AuthService {
       },
       withCredentials: true  
     }).pipe(
+      switchMap(()=>{
+        return this.getUserApi();
+      }),
       tap(() => {
         this._authenticated = true;
         console.log('Login successful');
@@ -79,7 +103,6 @@ export class AuthService {
       })
       .pipe(
         tap(() => {
-        this._authenticated = true;
         console.log('Register successful');
       }),
       catchError((error) => {

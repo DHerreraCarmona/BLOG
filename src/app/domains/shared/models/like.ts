@@ -1,5 +1,6 @@
 import { AuthorShort} from './author'
 
 export interface Like {
-    author: AuthorShort;
+    post: {"id": number,"title": string}
+    author: {"username": AuthorShort};
 }

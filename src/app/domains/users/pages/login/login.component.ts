@@ -8,9 +8,6 @@ import { AuthService } from '@shared/services/auth.service';
 import { BtnComponent } from '@shared/components/btn/btn.component';
 import { environment } from "@env/enviroments.prod";
 
-
-
-
 @Component({
   selector: 'app-login',
   standalone: true,
@@ -83,7 +80,6 @@ export class LoginComponent implements OnInit{
         this.handleAuthError();
       } 
     });
-
   }
   
   private handleAuthError(): void {

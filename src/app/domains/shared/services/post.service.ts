@@ -18,17 +18,14 @@ export class PostService {
 
   getAllPosts(): Observable<{ results: Post[] }> {
     return this.http.get<{ results: Post[] }>(`${this.apiUrl}post/`,
-      { withCredentials: true}
     );
   }
   
   getPost(id: number){
-    return this.http.get<Post>(this.apiUrl + `post/${id}`,
-      { withCredentials: true});
+    return this.http.get<Post>(this.apiUrl + `post/${id}`);
   }
 
   createPost(data: Post){
-    return this.http.post<Post>(this.apiUrl + 'post/create', data,
-      { withCredentials: true});
+    return this.http.post<Post>(this.apiUrl + 'post/create', data);
   }
 }

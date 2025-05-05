@@ -10,6 +10,8 @@ export interface Post {
     created_at: string;
     countComments: number;
     countLikes: number;
+    isPostOwner?: boolean;
+    isLiked?: boolean;
 }
 
 export interface PostDetail {

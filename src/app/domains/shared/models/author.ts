@@ -1,4 +1,5 @@
 export interface AuthorPost {
+    id: number;
     username: string;
     team: string;
 }
