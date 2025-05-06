@@ -4,10 +4,15 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "./out-tsc/app",
-    "types": []
+    "types": ["node"],
+    // "target": "es2022",
+    // "module": "es2022",
+    // "experimentalDecorators": true,
   },
   "files": [
-    "src/main.ts"
+    "src/main.ts", 
+    // "src/main.server.ts",
+    // "src/server.ts"
   ],
   "include": [
     "src/**/*.d.ts"

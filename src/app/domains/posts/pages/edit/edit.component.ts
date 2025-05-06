@@ -4,7 +4,6 @@ import { Component } from '@angular/core';
   selector: 'app-edit',
   imports: [],
   templateUrl: './edit.component.html',
-  styleUrl: './edit.component.css'
 })
 export class EditComponent {
 

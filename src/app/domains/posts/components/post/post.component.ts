@@ -8,39 +8,26 @@ import { AuthorPost } from '@shared/models/author';
 import { AuthService } from '@shared/services/auth.service';
 import { PostService } from '@shared/services/post.service';
 import { LikeService } from '@shared/services/like.service';
-import { map } from 'rxjs';
+import { map, tap } from 'rxjs';
 
 @Component({
+  standalone: true,
   selector: 'app-post',
   imports: [CommonModule,OverlayModule],
   templateUrl: './post.component.html',
-  standalone: true,
 })
 export class PostComponent implements OnInit{
   @Input() post!: Post;
-  currentUserId!: number;
+  isAuth = false;
+  user: AuthorPost = {
+    id: -1,
+    username: '',
+    team: ''
+  }
+  currentUserId: number= -1;
   isPostOwner = false;
   showPostDetail = false;
-  // auth: boolean = false;
-  // posts: Post[]= [];
-  // postDetail: Post = {
-  //   id: 0,
-  //   author: {
-  //     id:0,
-  //     username: '',
-  //     team: ''
-  //   },
-  //   title: '',
-  //   excerpt: '',
-  //   created_at: '',
-  //   countLikes: 0,
-  //   countComments: 0
-  // };
-  // user: AuthorPost = {
-  //   id:0,
-  //   username: '',
-  //   team: ''
-  // };
+
   constructor(
     private likeService: LikeService,
     private authService: AuthService,
@@ -51,8 +38,14 @@ export class PostComponent implements OnInit{
   isLikesOverlayOpen: boolean = false;
 
   ngOnInit(): void {
-    this.currentUserId = this.authService.getUser().id
-    this.post.isPostOwner = this.post.author.id === this.currentUserId;
+    this.isAuth = this.authService.isAuthenticated;
+  
+    if(this.isAuth){
+      this.user = this.authService.getUser();
+      this.currentUserId = this.user.id;
+      this.currentUserId == -1 ? this.isAuth= false : this.isAuth;
+      this.post.isPostOwner = this.post.author.id === this.currentUserId;
+    }
   }
   
   getPostLikes() {
@@ -64,19 +57,31 @@ export class PostComponent implements OnInit{
     });
   }
 
+  giveLike(){
 
-  // ngOnInit(): void {
-  // this.auth = this.authService.isAuthenticated;
-  // this.user = this.authService.getUser();
-  // this.postService.getAllPosts().subscribe(data => {
-  //   this.posts = data.results.map(post=>{
-  //     return {
-  //       ...post,
-  //       isPostOwner: post.author.id === this.user.id,
-  //     };
-  //   });
-  // });
-  // }
+    if(!this.isAuth) return;
+
+    this.likeService.giveLike(this.post.id).subscribe({
+      next: ()=>{
+        this.post.isLiked = !this.post.isLiked;
+        this.post.countLikes += this.post.isLiked ? 1 : -1;
+
+        if(this.post.isLiked){
+          this.likes.push({
+            post: { id: this.post.id, title: this.post.title },
+            author: { username: this.authService.getUser().username }
+          });
+        }
+        else{
+          this.likes = this.likes.filter(like => like.author.username != this.user.username);
+        }
+      },
+      error(err) {
+        console.error('Giving like/dislike error',err);
+      },
+    })
+
+  }
 
   // togglePostDetail(show?: boolean) {
   //   this.showPostDetail = show ?? !this.showPostDetail;
@@ -94,7 +99,6 @@ export class PostComponent implements OnInit{
   //   });
   // }
   
-
   // createNewPost(newPost: Post): void {  
   //   this.postService.createPost(newPost).subscribe({
   //     next: (data) => {

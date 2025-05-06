@@ -34,13 +34,12 @@ export class LikeService {
   getLikesByUser(userId: number): Observable<number[]> {
     return this.http.get<LikeResponse>(`${this.apiUrl}likes/author/${userId}/`,
     ).pipe(
-      tap(res => console.log('Raw like data:', res)),
-      map(res => res.results.map(like => like.post.id))
+      map(res => res.results.map(like => like.post.id)),
     );
     
   }
 
   giveLike(postId:number){
-    return this.http.post(this.apiUrl + `post/${postId}/give-like`, {});
+    return this.http.post(this.apiUrl + `post/${postId}/give-like/`, {});
   }
 }

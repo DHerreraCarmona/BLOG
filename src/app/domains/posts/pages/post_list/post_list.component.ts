@@ -44,43 +44,30 @@ export class PostListComponent {
 
   async ngOnInit(): Promise<void> {
     try {
-      this.currentUserId  = await this.authService.getUser().id;
-
-      this.likeService.getLikesByUser(this.currentUserId).subscribe((likedPostIds) => {
-        this.userLikes = likedPostIds;
-      });
-      console.log('User',this.currentUserId, 'likes loaded:', this.userLikes);
-
-     
-      this.postService.getAllPosts().subscribe({
-        next: (response: { results: Post[] }) => {
-          this.posts = response.results.map((post: Post) => ({
+      this.currentUserId = await this.authService.getUser().id;
+  
+      forkJoin({
+        likes: this.likeService.getLikesByUser(this.currentUserId),
+        postsResponse: this.postService.getAllPosts()
+      }).subscribe({
+        next: ({ likes, postsResponse }) => {
+          this.userLikes = likes;
+  
+          this.posts = postsResponse.results.map((post: Post) => ({
             ...post,
-            isPostOwner: post.author.id === this.currentUserId
-          }));
+            isPostOwner: post.author.id === this.currentUserId,
+            isLiked: likes.includes(post.id)
+          })).reverse();
+
         },
-        error: (error) => {
-          console.error('Error loading posts:', error);
+        error: (err) => {
+          console.error('Error fetching posts or likes:', err);
         }
       });
     } catch (error) {
-      console.error('Error loading posts or user:', error);
+      console.error('Error initializing component:', error);
     }
   }
-
-
-  // ngOnInit(): void {
-  //   this.user = this.authService.getUser();
-
-  //   this.postService.getAllPosts().subscribe(data => {
-  //     this.posts = data.results.reverse().map(post=>{
-  //       return {
-  //         ...post,
-  //         isPostOwner: post.author.id === this.user.id
-  //       };
-  //     });
-  //   });
-  // }
   
   togglePostDetail(show?: boolean) {
     this.showPostDetail = show ?? !this.showPostDetail;
