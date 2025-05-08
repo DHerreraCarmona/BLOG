@@ -7,7 +7,7 @@ import { PostComponent } from "@post/components/post/post.component";
 import { AuthService } from '@shared/services/auth.service';
 import { PostService } from '@shared/services/post.service';
 import { LikeService } from '@shared/services/like.service';
-import { firstValueFrom, forkJoin } from 'rxjs';
+import { catchError, filter, firstValueFrom, forkJoin, map, of, switchMap, take } from 'rxjs';
 import { Like } from '@shared/models/like';
 
 @Component({
@@ -40,34 +40,63 @@ export class PostListComponent {
     private postService: PostService,
     private authService: AuthService,
     private likeService: LikeService,
-      ){}
+  ){}
 
-  async ngOnInit(): Promise<void> {
-    try {
-      this.currentUserId = await this.authService.getUser().id;
-  
-      forkJoin({
-        likes: this.likeService.getLikesByUser(this.currentUserId),
-        postsResponse: this.postService.getAllPosts()
-      }).subscribe({
-        next: ({ likes, postsResponse }) => {
-          this.userLikes = likes;
-  
-          this.posts = postsResponse.results.map((post: Post) => ({
-            ...post,
-            isPostOwner: post.author.id === this.currentUserId,
-            isLiked: likes.includes(post.id)
-          })).reverse();
-
-        },
-        error: (err) => {
-          console.error('Error fetching posts or likes:', err);
-        }
-      });
-    } catch (error) {
-      console.error('Error initializing component:', error);
-    }
+  ngOnInit(): void {
+    this.authService.authStatus$.pipe(
+      switchMap(isAuth => {
+        if (!isAuth) {
+            // Usuario no autenticado: Cargar posts públicos
+            return this.postService.getAllPosts().pipe(
+                map(posts => this.mapPostsForAnonymous(posts.results))
+            );
+        } 
+        // Usuario autenticado: Cargar posts y likes del usuario
+        return this.authService.currentUser$.pipe(
+            filter(user => user !== null),
+            take(1),
+            switchMap(user =>{
+              this.currentUserId = user.id;
+              return forkJoin({
+                posts: this.postService.getAllPosts(),
+                likes: this.likeService.getLikesByUser(user.id)
+              }).pipe(
+                map(({ posts, likes }) =>
+                    this.mapPostsForAuthenticated(posts.results, user, likes)
+                )
+              );
+          })
+        );
+      }),
+      catchError(err => {
+          console.error('Error loading posts:', err);
+          return of([]);
+      })
+    ).subscribe(posts => {
+        this.posts = posts.reverse();
+    });
   }
+
+  private mapPostsForAnonymous(posts: Post[]): Post[] {
+    return posts.map(post => ({
+        ...post,
+        isPostOwner: false,
+        isLiked: false
+    }));
+  }
+
+  private mapPostsForAuthenticated(posts: Post[], user: AuthorPost, likes: number[]): Post[] {
+      return posts.map(post => ({
+          ...post,
+          isPostOwner: post.author.id === user.id,
+          isLiked: likes.includes(post.id)
+      }));
+  }
+
+  onPostDeleted(postId: number) {
+    this.posts = this.posts.filter(post => post.id !== postId);
+  }
+
   
   togglePostDetail(show?: boolean) {
     this.showPostDetail = show ?? !this.showPostDetail;

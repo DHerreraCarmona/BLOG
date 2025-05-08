@@ -1,0 +1,22 @@
+.logout-btn {
+    background: transparent;
+    border: none;
+    color: rgb(236, 236, 236);
+    cursor: pointer;
+    padding: 0.5rem;
+    transition: all 0.3s ease;
+  }
+  
+  .logout-icon {
+    transition: all 0.3s ease;
+  }
+
+  .logout-btn:hover {
+    color: white;
+  }
+  
+  .logout-btn:hover .logout-icon {
+    transform: scale(1.5);
+  }
+  
+  

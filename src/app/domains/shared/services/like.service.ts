@@ -36,7 +36,6 @@ export class LikeService {
     ).pipe(
       map(res => res.results.map(like => like.post.id)),
     );
-    
   }
 
   giveLike(postId:number){

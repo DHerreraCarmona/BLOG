@@ -22,10 +22,14 @@ export class PostService {
   }
   
   getPost(id: number){
-    return this.http.get<Post>(this.apiUrl + `post/${id}`);
+    return this.http.get<Post>(this.apiUrl + `post/${id}/`);
   }
 
   createPost(data: Post){
-    return this.http.post<Post>(this.apiUrl + 'post/create', data);
+    return this.http.post<Post>(this.apiUrl + 'post/create/', data);
+  }
+
+  deletePost(id:number){
+    return this.http.delete(this.apiUrl + `post/${id}/`);
   }
 }

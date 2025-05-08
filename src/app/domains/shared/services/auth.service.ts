@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, of } from 'rxjs';
+import { BehaviorSubject, firstValueFrom, Observable, of } from 'rxjs';
 import { map, tap, catchError, switchMap } from 'rxjs/operators';
 
 import { environment } from '@env/enviroments.prod';
@@ -10,26 +10,56 @@ import { AuthorPost } from '@shared/models/author';
 export class AuthService {
   apiUrl = environment.API_URL;
 
-  private _authenticated$ = new BehaviorSubject<boolean>(this.getUser() !== null);
-  private _currentUser$ = new BehaviorSubject<AuthorPost | null>(this.getUser());
+  private authStatusSubject = new BehaviorSubject<boolean>(false);
+  authStatus$ = this.authStatusSubject.asObservable();
 
+  private currentUserSubject = new BehaviorSubject<AuthorPost | null>(null);
+  currentUser$ = this.currentUserSubject.asObservable();
 
-  constructor(private http: HttpClient) {}
+  private isInitializing = true; 
 
-  get authStatus$(): Observable<boolean> {
-    return this._authenticated$.asObservable();
-  }
-
-  get currentUser$(): Observable<AuthorPost | null> {
-    return this._currentUser$.asObservable();
+  constructor(private http: HttpClient) {
+    const userJson = localStorage.getItem('currentUser');
+    if (userJson) {
+        try {
+            const user = JSON.parse(userJson);
+            this.currentUserSubject.next(user);
+            this.authStatusSubject.next(true);
+        } catch (error) {
+            console.error("Error parsing currentUser from localStorage:", error);
+            this.clearAuthData();
+        } finally {
+            this.isInitializing = false;
+        }
+    } else {
+        this.isInitializing = false;
+    }
   }
   
+  // init(): void {
+  //   const userJson = localStorage.getItem('currentUser');
+  //   if (userJson) {
+  //       try {
+  //           const user = JSON.parse(userJson);
+  //           this.currentUserSubject.next(user);
+  //           this.authStatusSubject.next(true);
+  //       } catch (error) {
+  //           console.error("Error parsing currentUser from localStorage:", error);
+  //           this.clearAuthData();
+  //       } finally {
+  //           this.isInitializing = false;
+  //       }
+  //   } else {
+  //       this.isInitializing = false;
+  //   }
+  // }
+
   get isAuthenticated(): boolean {
-    return this._authenticated$.value;
+    return this.authStatusSubject.getValue();
   }
 
   get user(): AuthorPost | null {
-    return this._currentUser$.value;
+    return this.currentUserSubject.getValue();
   }
 
   private getCsrfToken(): string | null {
@@ -41,48 +71,46 @@ export class AuthService {
     return this.http.get(`${this.apiUrl}csrf/`, { withCredentials: true });
   }
 
-  checkAuth(): Observable<boolean> {
-    return this.http.get(`${this.apiUrl}me/`, { withCredentials: true }).pipe(
-      map((user: any) => {
-        localStorage.setItem('user', JSON.stringify(user));
-        this._authenticated$.next(true);
-        this._currentUser$.next(user);
-        return true;
-      }),
-      catchError(() => {
-        this._authenticated$.next(false);
-        this._currentUser$.next(null);
-        return of(false);
-      })
-    );
-  }
-
-
   getUserApi(): Observable<AuthorPost> {
     return this.http.get<AuthorPost>(`${this.apiUrl}me/`).pipe(
       tap(user => {
-        localStorage.setItem('user', JSON.stringify(user));
-        this._authenticated$.next(true);
-        this._currentUser$.next(this.user);
+        localStorage.setItem('currentUser', JSON.stringify(user));
+        this.currentUserSubject.next(user);
+        this.authStatusSubject.next(true);
       })
     );
   }
 
   getUser(): AuthorPost {
-    const user = localStorage.getItem('user');
-    if (user) {
-      return JSON.parse(user);
+    try {
+        const userJson = localStorage.getItem('currentUser');
+        if (userJson) {
+            return JSON.parse(userJson);
+        }
+    } catch (error) {
+        console.error("Error parsing currentUser from localStorage:", error);
+        this.clearAuthData();
     }
-    return {
-      id: -1,
-      username: '',
-      team: ''
-    };
+    return { id: -1, username: '', team: '' };
+}
+
+  checkAuth(): Observable<boolean> {
+    return this.http.get(`${this.apiUrl}me/`, { withCredentials: true }).pipe(
+      map((user: any) => {
+        localStorage.setItem('currentUser', JSON.stringify(user));
+        this.currentUserSubject.next(user);
+        this.authStatusSubject.next(true);
+        return true;
+      }),
+      catchError(() => {
+        this.clearAuthData();
+        return of(false);
+      })
+    );
   }
 
-  login(username: string, password: string): Observable<any> {
+  login(username: string, password: string): Observable<AuthorPost | null> {
     const csrfToken = this.getCsrfToken(); 
-  
     const body = new URLSearchParams();
     body.set('username', username);
     body.set('password', password);
@@ -91,21 +119,17 @@ export class AuthService {
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
         'X-CSRFToken': csrfToken ?? ''  
-      },
-      withCredentials: true  
+      }
     }).pipe(
-      switchMap(()=>{
-        return this.getUserApi();
-      }),
-      tap(() => {
-        this._authenticated$.next(true);
-        this._currentUser$.next(this.user);
+      tap((user:any) => {
+        localStorage.setItem('currentUser', JSON.stringify(user));
+        this.currentUserSubject.next(user);
+        this.authStatusSubject.next(true);
         console.log('Login successful');
       }),
       catchError((error) => {
         console.error('Login failed:', error);
-        this._authenticated$.next(false);
-        this._currentUser$.next(null);
+        this.clearAuthData();
         return of(null);
       })
     );
@@ -138,21 +162,21 @@ export class AuthService {
   }  
 
   logout(): Observable<any> {
-    return this.http.post(`${this.apiUrl}logout/`, {}, { withCredentials: true }).pipe(
+    return this.http.post(`${this.apiUrl}logout/`, {}).pipe(
       tap(() => {
-        localStorage.removeItem('user');
-        this._authenticated$.next(false);
-        this._currentUser$.next(null);
-        console.log('Logged out');
+        this.clearAuthData();
       }),
       catchError((error) => {
         console.error('Logout failed:', error);
-        localStorage.removeItem('user');
-        this._authenticated$.next(false);
-        this._currentUser$.next(null);
+        this.clearAuthData();
         return of(null);
       })
     );
   }
-  
+
+  private clearAuthData(): void {
+    localStorage.removeItem('currentUser');
+    this.currentUserSubject.next(null);
+    this.authStatusSubject.next(false);
+}
 }

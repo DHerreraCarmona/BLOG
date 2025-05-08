@@ -2,6 +2,7 @@
     <app-post 
         *ngFor="let post of posts"
         [post]="post"
+        (postDeleted)="onPostDeleted($event)">
     >
     </app-post>
 </div>

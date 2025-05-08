@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, OnInit } from '@angular/core';
-import { OverlayModule } from '@angular/cdk/overlay';
+import { combineLatest, map, Subscription, tap } from 'rxjs';
+import { Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
+import { OverlayModule} from '@angular/cdk/overlay';
 
 import { Post } from '@shared/models/post';
 import { Like } from '@shared/models/like';
@@ -8,7 +9,6 @@ import { AuthorPost } from '@shared/models/author';
 import { AuthService } from '@shared/services/auth.service';
 import { PostService } from '@shared/services/post.service';
 import { LikeService } from '@shared/services/like.service';
-import { map, tap } from 'rxjs';
 
 @Component({
   standalone: true,
@@ -16,41 +16,44 @@ import { map, tap } from 'rxjs';
   imports: [CommonModule,OverlayModule],
   templateUrl: './post.component.html',
 })
-export class PostComponent implements OnInit{
+export class PostComponent implements OnInit, OnDestroy{
   @Input() post!: Post;
+  @Output() postDeleted = new EventEmitter<number>();
   isAuth = false;
-  user: AuthorPost = {
-    id: -1,
-    username: '',
-    team: ''
-  }
+  user: AuthorPost = {id: -1, username: '', team: ''}
   currentUserId: number= -1;
   isPostOwner = false;
   showPostDetail = false;
-
-  constructor(
-    private likeService: LikeService,
-    private authService: AuthService,
-  ){}
-  
   likes: Like[] = []
   likesLoaded: boolean = false;
   isLikesOverlayOpen: boolean = false;
-
-  ngOnInit(): void {
-    this.isAuth = this.authService.isAuthenticated;
+  isDeleteModalOpen: boolean = false;
+  private authSubscription?: Subscription;
   
-    if(this.isAuth){
-      this.user = this.authService.getUser();
-      this.currentUserId = this.user.id;
-      this.currentUserId == -1 ? this.isAuth= false : this.isAuth;
-      this.post.isPostOwner = this.post.author.id === this.currentUserId;
-    }
+  constructor(
+    private likeService: LikeService,
+    private authService: AuthService,
+    private postService: PostService,
+  ){}
+
+  
+  ngOnInit(): void {
+    this.authSubscription = combineLatest([
+      this.authService.authStatus$,
+      this.authService.currentUser$
+    ]).pipe(
+      tap(([isAuth, user]) => {
+        this.isAuth = isAuth;
+        this.user = user || { id: -1, username: '', team: '' };
+        this.currentUserId = user ? user.id : -1;
+        this.isPostOwner = user ? this.post.author.id === user.id : false;
+      })
+    ).subscribe();
   }
   
   getPostLikes() {
     if (this.likesLoaded) return;
-  
+    
     this.likesLoaded = true;
     this.likeService.getLikes(this.post.id).subscribe((likes) => {
       this.likes = Array.isArray(likes) ? likes.reverse() : []
@@ -58,7 +61,6 @@ export class PostComponent implements OnInit{
   }
 
   giveLike(){
-
     if(!this.isAuth) return;
 
     this.likeService.giveLike(this.post.id).subscribe({
@@ -80,7 +82,31 @@ export class PostComponent implements OnInit{
         console.error('Giving like/dislike error',err);
       },
     })
+  }
 
+  ngOnDestroy(): void {
+    if (this.authSubscription) {
+      this.authSubscription.unsubscribe();
+    }
+  }
+
+  deletePost() {
+    this.postService.deletePost(this.post.id).subscribe({
+      next: (response) => {
+        console.log('Post deleted successfully', response);
+        this.isDeleteModalOpen = false; 
+        this.postDeleted.emit(this.post.id);
+      },
+      error: (error) => {
+        console.error('Error deleting post', error);
+      }
+    });
+  }
+
+  closeModalOutside(event: Event) {
+    if (event.target === event.currentTarget) {
+      this.isDeleteModalOpen = false;
+    }
   }
 
   // togglePostDetail(show?: boolean) {
