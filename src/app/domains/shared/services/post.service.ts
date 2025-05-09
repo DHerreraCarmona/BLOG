@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 
 import {environment} from '@env/enviroments.prod'
-import { Post} from '@shared/models/post';
+import { Post,PostDetail,PostEditCreate} from '@shared/models/post';
 import { Observable } from 'rxjs';
 
 @Injectable({
@@ -21,12 +21,20 @@ export class PostService {
     );
   }
   
-  getPost(id: number){
-    return this.http.get<Post>(this.apiUrl + `post/${id}/`);
+  getPostDetail(id: number){
+    return this.http.get<PostDetail>(this.apiUrl + `post/${id}/`);
   }
 
-  createPost(data: Post){
-    return this.http.post<Post>(this.apiUrl + 'post/create/', data);
+  createPost(data: PostEditCreate){
+    return this.http.post<PostEditCreate>(this.apiUrl + 'post/create/', data);
+  }
+
+  getEditPost(postId: number){
+    return this.http.get<PostEditCreate>(this.apiUrl + `blog/${postId}/`);
+  }
+
+  postEditPost(data: PostEditCreate){
+    return this.http.put<PostEditCreate>(this.apiUrl + `blog/${data.id}/`, data);
   }
 
   deletePost(id:number){

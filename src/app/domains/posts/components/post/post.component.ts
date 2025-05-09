@@ -1,7 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { combineLatest, map, Subscription, tap } from 'rxjs';
-import { Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
 import { OverlayModule} from '@angular/cdk/overlay';
+import { Dialog} from '@angular/cdk/dialog';
+import { Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
 
 import { Post } from '@shared/models/post';
 import { Like } from '@shared/models/like';
@@ -9,6 +10,7 @@ import { AuthorPost } from '@shared/models/author';
 import { AuthService } from '@shared/services/auth.service';
 import { PostService } from '@shared/services/post.service';
 import { LikeService } from '@shared/services/like.service';
+import { EditComponent } from '../edit/edit.component';
 
 @Component({
   standalone: true,
@@ -26,14 +28,17 @@ export class PostComponent implements OnInit, OnDestroy{
   showPostDetail = false;
   likes: Like[] = []
   likesLoaded: boolean = false;
-  isLikesOverlayOpen: boolean = false;
-  isDeleteModalOpen: boolean = false;
   private authSubscription?: Subscription;
+  
+  isLikesOverlayOpen: boolean = false;
+  isDeleteViewOpen: boolean = false;
+  isEditModalOpen: boolean = false;
   
   constructor(
     private likeService: LikeService,
     private authService: AuthService,
     private postService: PostService,
+    private dialog: Dialog
   ){}
 
   
@@ -90,11 +95,23 @@ export class PostComponent implements OnInit, OnDestroy{
     }
   }
 
+  openEditModal(){
+    this.dialog.open(EditComponent,
+      { minWidth: '75%',
+        maxWidth: '75%',
+        data:{
+          postId: this.post.id,
+          isCreate: false
+        }
+      } 
+    );
+  }
+
   deletePost() {
     this.postService.deletePost(this.post.id).subscribe({
       next: (response) => {
         console.log('Post deleted successfully', response);
-        this.isDeleteModalOpen = false; 
+        this.isDeleteViewOpen = false; 
         this.postDeleted.emit(this.post.id);
       },
       error: (error) => {
@@ -103,15 +120,8 @@ export class PostComponent implements OnInit, OnDestroy{
     });
   }
 
-  closeModalOutside(event: Event) {
-    if (event.target === event.currentTarget) {
-      this.isDeleteModalOpen = false;
-    }
-  }
+}
 
-  // togglePostDetail(show?: boolean) {
-  //   this.showPostDetail = show ?? !this.showPostDetail;
-  // }
   
   // onShowDetail(id: number): void {
   //   this.postService.getPost(id).subscribe({
@@ -137,5 +147,5 @@ export class PostComponent implements OnInit, OnDestroy{
   // }
 
   
-}
+
 

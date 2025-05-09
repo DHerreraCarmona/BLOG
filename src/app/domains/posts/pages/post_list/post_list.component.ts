@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
-import { Post } from '@shared/models/post';
+import { Post, PostDetail } from '@shared/models/post';
 import { AuthorPost} from '@shared/models/author'
 import { PostComponent } from "@post/components/post/post.component";
 import { AuthService } from '@shared/services/auth.service';
@@ -22,19 +22,7 @@ export class PostListComponent {
   userLikes: number[] = [];
 
   showPostDetail = false;
-  postDetail: Post = {
-    id: 0,
-    author: {
-      id: 0,
-      username: '',
-      team: ''
-    },
-    title: '',
-    excerpt: '',
-    created_at: '',
-    countLikes: 0,
-    countComments: 0
-  };
+  postDetail!: PostDetail
   
   constructor(
     private postService: PostService,
@@ -98,31 +86,31 @@ export class PostListComponent {
   }
 
   
-  togglePostDetail(show?: boolean) {
-    this.showPostDetail = show ?? !this.showPostDetail;
-  }
+  // togglePostDetail(show?: boolean) {
+  //   this.showPostDetail = show ?? !this.showPostDetail;
+  // }
     
-  onShowDetail(id: number): void {
-    this.postService.getPost(id).subscribe({
-      next: (data) => {
-        this.postDetail = data;
-        this.togglePostDetail(true);
-      },
-      error: (err) => {
-        console.error(`Error: post ${id} not founded`, err);
-      }
-    });
-  }
+  // onShowDetail(id: number): void {
+  //   this.postService.getPostDetail(id).subscribe({
+  //     next: (data) => {
+  //       this.postDetail = data;
+  //       this.togglePostDetail(true);
+  //     },
+  //     error: (err) => {
+  //       console.error(`Error: post ${id} not founded`, err);
+  //     }
+  //   });
+  // }
     
   
-  createNewPost(newPost: Post): void {  
-    this.postService.createPost(newPost).subscribe({
-      next: (data) => {
-        this.posts.unshift(data);
-      },
-      error: (err) => {
-        console.error('Error al crear post', err);
-      }
-    });
-  }
+  // createNewPost(newPost: Post): void {  
+  //   this.postService.createPost(newPost).subscribe({
+  //     next: (data) => {
+  //       this.posts.unshift(data);
+  //     },
+  //     error: (err) => {
+  //       console.error('Error al crear post', err);
+  //     }
+  //   });
+  // }
 }

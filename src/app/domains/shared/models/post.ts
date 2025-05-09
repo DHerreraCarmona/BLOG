@@ -1,4 +1,4 @@
-import { AuthorPost } from "./author";
+import { AuthorPost, AuthorShort } from "./author";
 import { Comment } from "./comment";
 import { Like } from "./like";
 
@@ -22,4 +22,15 @@ export interface PostDetail {
     created_at: string;
     comments: Comment[];
     likes: Like[];
+}
+
+export interface PostEditCreate {
+    id: number,
+    author: AuthorShort;
+    title: string;
+    content: string;
+    public: number;
+    authenticated: number;
+    team: number;
+    owner:number;
 }

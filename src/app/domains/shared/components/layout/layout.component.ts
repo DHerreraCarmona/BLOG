@@ -1,14 +1,30 @@
 import { Component } from '@angular/core';
 import { RouterModule } from '@angular/router';
+import { Dialog} from '@angular/cdk/dialog';
 
 import { HeaderComponent } from '../header/header.component';
 import { PostListComponent } from '@post/pages/post_list/post_list.component';
 
+import { EditComponent } from '@post/components/edit/edit.component';
+import { CommonModule } from '@angular/common';
+
 @Component({
   selector: 'app-layout',
-  imports: [RouterModule, HeaderComponent, PostListComponent],
+  imports: [RouterModule, HeaderComponent, PostListComponent,CommonModule],
   templateUrl: './layout.component.html',
 })
 export class LayoutComponent {
 
+  constructor(private dialog: Dialog){}
+
+  openCreateModal(){
+    this.dialog.open(EditComponent,
+      { minWidth: '75%',
+        maxWidth: '75%',
+        data:{
+          isCreate: true
+        }
+      } 
+    );
+  }
 }
