@@ -15,13 +15,11 @@ export class CommentService {
     private http: HttpClient
   ) { }
 
-  getLikes(id: number){
-    return this.http.get<Comment[]>(this.url + `post/${id}/comments`,
-      { withCredentials: true});
+  getComments(id: number){
+    return this.http.get<Comment[]>(this.url + `post/${id}/comments/`);
   }
 
-  giveLike(id:number, data: createCommentModel){
-    return this.http.post<Comment>(this.url + `post/${id}/write-comment`, {},
-      { withCredentials: true});
+  postComment(id:number, data: createCommentModel){
+    return this.http.post<Comment>(this.url + `post/${id}/write-comment/`, data);
   }
 }

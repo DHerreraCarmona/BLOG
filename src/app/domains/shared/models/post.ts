@@ -10,6 +10,7 @@ export interface Post {
     created_at: string;
     countComments: number;
     countLikes: number;
+    isLongContent?: boolean;
     isPostOwner?: boolean;
     isLiked?: boolean;
 }
@@ -20,8 +21,7 @@ export interface PostDetail {
     title: string;
     content: string;
     created_at: string;
-    comments: Comment[];
-    likes: Like[];
+    countLikes: number;
 }
 
 export interface PostEditCreate {

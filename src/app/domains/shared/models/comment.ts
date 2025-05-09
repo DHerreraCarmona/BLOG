@@ -3,7 +3,7 @@ import { AuthorShort} from './author'
 export interface Comment {
     author: AuthorShort;
     content: string;
-    creaatedAt: string;
+    created_at: string;
 }
 
 export interface createCommentModel {

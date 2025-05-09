@@ -10,7 +10,8 @@ import { AuthorPost } from '@shared/models/author';
 import { AuthService } from '@shared/services/auth.service';
 import { PostService } from '@shared/services/post.service';
 import { LikeService } from '@shared/services/like.service';
-import { EditComponent } from '../edit/edit.component';
+import { EditComponent } from '../createEdit/createEdit.component';
+import { DetailComponent } from '../detail/detail.component';
 
 @Component({
   standalone: true,
@@ -32,7 +33,6 @@ export class PostComponent implements OnInit, OnDestroy{
   
   isLikesOverlayOpen: boolean = false;
   isDeleteViewOpen: boolean = false;
-  isEditModalOpen: boolean = false;
   
   constructor(
     private likeService: LikeService,
@@ -41,7 +41,6 @@ export class PostComponent implements OnInit, OnDestroy{
     private dialog: Dialog
   ){}
 
-  
   ngOnInit(): void {
     this.authSubscription = combineLatest([
       this.authService.authStatus$,
@@ -107,6 +106,26 @@ export class PostComponent implements OnInit, OnDestroy{
     );
   }
 
+  openDetailModal(){
+    const dialogRef = this.dialog.open(DetailComponent, {
+      minWidth: '75%',
+      maxWidth: '75%',
+      data: {
+          postId: this.post.id,
+      },
+      panelClass: 'detail-dialog-panel'
+  });
+
+    if (dialogRef && dialogRef.componentInstance) {
+      dialogRef.componentInstance.commentCreated.subscribe((updatedPostId: number) => {
+        if (updatedPostId === this.post.id) {
+          this.post.countComments++;
+        }
+      });
+    }
+    
+  }
+
   deletePost() {
     this.postService.deletePost(this.post.id).subscribe({
       next: (response) => {
@@ -119,32 +138,9 @@ export class PostComponent implements OnInit, OnDestroy{
       }
     });
   }
-
 }
 
   
-  // onShowDetail(id: number): void {
-  //   this.postService.getPost(id).subscribe({
-  //     next: (data) => {
-  //       this.postDetail = data;
-  //       this.togglePostDetail(true);
-  //     },
-  //     error: (err) => {
-  //       console.error(`Error: post ${id} not founded`, err);
-  //     }
-  //   });
-  // }
-  
-  // createNewPost(newPost: Post): void {  
-  //   this.postService.createPost(newPost).subscribe({
-  //     next: (data) => {
-  //       this.posts.unshift(data);
-  //     },
-  //     error: (err) => {
-  //       console.error('Error al crear post', err);
-  //     }
-  //   });
-  // }
 
   
 

@@ -5,8 +5,10 @@ import { Dialog} from '@angular/cdk/dialog';
 import { HeaderComponent } from '../header/header.component';
 import { PostListComponent } from '@post/pages/post_list/post_list.component';
 
-import { EditComponent } from '@post/components/edit/edit.component';
+import { EditComponent } from '@post/components/createEdit/createEdit.component';
 import { CommonModule } from '@angular/common';
+import { AuthService } from '@shared/services/auth.service';
+import { Observable } from 'rxjs';
 
 @Component({
   selector: 'app-layout',
@@ -15,7 +17,14 @@ import { CommonModule } from '@angular/common';
 })
 export class LayoutComponent {
 
-  constructor(private dialog: Dialog){}
+  isAuth$: Observable<boolean>;
+
+  constructor(
+    private authServive: AuthService,
+    private dialog: Dialog
+  ){
+    this.isAuth$ = this.authServive.authStatus$;
+  }
 
   openCreateModal(){
     this.dialog.open(EditComponent,

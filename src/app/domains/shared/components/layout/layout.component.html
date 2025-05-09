@@ -3,12 +3,11 @@
     <app-post-list/>
     <router-outlet/>
     <div class="fixed bottom-6 right-6">
-  <button (click)="openCreateModal()"
+  <button *ngIf="isAuth$ | async" (click)="openCreateModal()"
     class="bg-yellow-500 text-white font-medium rounded-md px-4 py-2 flex items-center justify-center gap-2 hover:bg-yellow-600 transition duration-300 ease-in-out shadow-lg">
     
     <span class="text-2xl font-bold leading-none">+</span>
     <span class="mt-1 text-base">Create Post</span>
     
   </button>
-</div>
 </div>

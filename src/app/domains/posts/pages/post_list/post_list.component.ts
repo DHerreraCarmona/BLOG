@@ -85,32 +85,4 @@ export class PostListComponent {
     this.posts = this.posts.filter(post => post.id !== postId);
   }
 
-  
-  // togglePostDetail(show?: boolean) {
-  //   this.showPostDetail = show ?? !this.showPostDetail;
-  // }
-    
-  // onShowDetail(id: number): void {
-  //   this.postService.getPostDetail(id).subscribe({
-  //     next: (data) => {
-  //       this.postDetail = data;
-  //       this.togglePostDetail(true);
-  //     },
-  //     error: (err) => {
-  //       console.error(`Error: post ${id} not founded`, err);
-  //     }
-  //   });
-  // }
-    
-  
-  // createNewPost(newPost: Post): void {  
-  //   this.postService.createPost(newPost).subscribe({
-  //     next: (data) => {
-  //       this.posts.unshift(data);
-  //     },
-  //     error: (err) => {
-  //       console.error('Error al crear post', err);
-  //     }
-  //   });
-  // }
 }

@@ -11,7 +11,7 @@ import { FormsModule } from '@angular/forms';
   selector: 'app-edit',
   standalone:true,
   imports: [CommonModule, FormsModule],
-  templateUrl: './edit.component.html',
+  templateUrl: './createEdit.component.html',
 })
 export class EditComponent {
   postId!: number;
@@ -24,7 +24,7 @@ export class EditComponent {
     {value: 2, access:"Read & Write"},
   ]
  
-  postAccess: number[] = [0,1,1,2]
+  postAccess: number[] = [1,1,2,2]
   accessLabels = ['Public', 'Authenticated', 'Team', 'Owner'];
 
   constructor(
@@ -32,7 +32,6 @@ export class EditComponent {
     private dialogRef: DialogRef<PostEditCreate>,
     @Inject(DIALOG_DATA) private data: { postId?: number; isCreate?: boolean },
   ){
-    console.log('DATA RECIBIDA:', this.data);
     this.isCreate = data?.isCreate === true;
     if (!this.isCreate && data?.postId) {
       this.postId = data.postId;
