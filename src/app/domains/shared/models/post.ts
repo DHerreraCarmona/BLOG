@@ -10,8 +10,9 @@ export interface Post {
     created_at: string;
     countComments: number;
     countLikes: number;
-    isLongContent?: boolean;
-    isPostOwner?: boolean;
+    teamEdit: boolean;
+    longContent?: boolean;
+    isOwnerOrTeamEdit?: boolean;
     isLiked?: boolean;
 }
 

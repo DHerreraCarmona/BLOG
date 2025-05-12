@@ -21,13 +21,13 @@ import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angu
 })
 export class DetailComponent {
   @Output() commentCreated = new EventEmitter<number>(); 
-  postId!: number;
-  postDetail!: PostDetail;
+  post!: Post;
+  content!: string;
   likes: Like[] = [];
   comments: Comment[] = [];
   isAuth = false;
   user: AuthorShort = {username: ''};
-  isPostOwner = false;
+  isOwnerOrTeamEdit = false;
   isLikesOverlayOpen: boolean = false;
   form;
   newComment!:createCommentModel;
@@ -41,12 +41,12 @@ export class DetailComponent {
     private authService: AuthService,
     private formBuilder: FormBuilder,  
     private dialogRef: DialogRef<PostDetail>,
-    @Inject(DIALOG_DATA) private data: { postId: number;},
+    @Inject(DIALOG_DATA) private data: { post: Post;},
   ){
       this.form = this.formBuilder.nonNullable.group({
         content: ['', Validators.required],
       });
-      this.postId = data.postId;
+      this.post = data.post;
   }
 
   ngOnInit(): void {
@@ -72,20 +72,25 @@ export class DetailComponent {
   }
 
   fetchData() {
-    this.postService.getPostDetail(this.postId).subscribe({
-      next: (data) => {
-        this.postDetail = data;
-      },
-      error: (error) => {
-        console.error('Error fetching post detail:', error);
-      }
-    });
+    if (!this.post.longContent){
+      this.content = this.post.excerpt
+    }
+    else{
+      this.postService.getPostDetail(this.post.id).subscribe({
+        next: (data) => {
+          this.content = data.content;
+        },
+        error: (error) => {
+          console.error('Error fetching post detail:', error);
+        }
+      });
+    }
 
-    this.likeService.getLikes(this.postId).subscribe((likes) => {
+    this.likeService.getLikes(this.post.id).subscribe((likes) => {
       this.likes = Array.isArray(likes) ? likes.reverse() : [];
     });
 
-    this.commentService.getComments(this.postId).subscribe({
+    this.commentService.getComments(this.post.id).subscribe({
       next: (data) => {
         this.comments = data;
       },
@@ -105,11 +110,11 @@ export class DetailComponent {
       content: this.form.getRawValue().content
     } as createCommentModel;
     
-    this.commentService.postComment(this.postId, this.newComment).subscribe({
+    this.commentService.postComment(this.post.id, this.newComment).subscribe({
       next: (comment) => {
-        this.comments = [comment, ...this.comments];
+        this.comments = [ ...this.comments,comment];
         this.resetForm();
-        this.commentCreated.emit(this.postId);
+        this.commentCreated.emit(this.post.id);
       },
       error: (error) => {
         console.error('Error creating comment:', error);

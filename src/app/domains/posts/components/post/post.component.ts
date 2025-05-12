@@ -25,14 +25,14 @@ export class PostComponent implements OnInit, OnDestroy{
   isAuth = false;
   user: AuthorPost = {id: -1, username: '', team: ''}
   currentUserId: number= -1;
-  isPostOwner = false;
-  showPostDetail = false;
+  isOwnerOrTeamEdit = false;
   likes: Like[] = []
   likesLoaded: boolean = false;
   private authSubscription?: Subscription;
   
-  isLikesOverlayOpen: boolean = false;
-  isDeleteViewOpen: boolean = false;
+  showPostDetail = false;
+  isLikesOverlayOpen = false;
+  isDeleteViewOpen = false;
   
   constructor(
     private likeService: LikeService,
@@ -50,7 +50,7 @@ export class PostComponent implements OnInit, OnDestroy{
         this.isAuth = isAuth;
         this.user = user || { id: -1, username: '', team: '' };
         this.currentUserId = user ? user.id : -1;
-        this.isPostOwner = user ? this.post.author.id === user.id : false;
+        this.isOwnerOrTeamEdit = false;
       })
     ).subscribe();
   }
@@ -60,7 +60,7 @@ export class PostComponent implements OnInit, OnDestroy{
     
     this.likesLoaded = true;
     this.likeService.getLikes(this.post.id).subscribe((likes) => {
-      this.likes = Array.isArray(likes) ? likes.reverse() : []
+      this.likes = Array.isArray(likes) ? likes : []
     });
   }
 
@@ -111,7 +111,7 @@ export class PostComponent implements OnInit, OnDestroy{
       minWidth: '75%',
       maxWidth: '75%',
       data: {
-          postId: this.post.id,
+          post: this.post,
       },
       panelClass: 'detail-dialog-panel'
   });

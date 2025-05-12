@@ -36,24 +36,6 @@ export class AuthService {
     }
   }
   
-  // init(): void {
-  //   const userJson = localStorage.getItem('currentUser');
-  //   if (userJson) {
-  //       try {
-  //           const user = JSON.parse(userJson);
-  //           this.currentUserSubject.next(user);
-  //           this.authStatusSubject.next(true);
-  //       } catch (error) {
-  //           console.error("Error parsing currentUser from localStorage:", error);
-  //           this.clearAuthData();
-  //       } finally {
-  //           this.isInitializing = false;
-  //       }
-  //   } else {
-  //       this.isInitializing = false;
-  //   }
-  // }
-
   get isAuthenticated(): boolean {
     return this.authStatusSubject.getValue();
   }
@@ -142,7 +124,7 @@ export class AuthService {
     body.set('email', email);
     body.set('username', email.substring(0, email.indexOf('@')));
     body.set('password', password);
-    body.set('group', 'default');
+    body.set('group', 'None');
     
     return this.http.post(`${this.apiUrl}register/`, body.toString(), {
       headers: {

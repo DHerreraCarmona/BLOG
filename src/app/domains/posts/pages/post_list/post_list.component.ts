@@ -61,24 +61,27 @@ export class PostListComponent {
           return of([]);
       })
     ).subscribe(posts => {
-        this.posts = posts.reverse();
+        this.posts = posts;
     });
   }
 
   private mapPostsForAnonymous(posts: Post[]): Post[] {
     return posts.map(post => ({
         ...post,
-        isPostOwner: false,
+        isOwnerOrTeamEdit: false,
         isLiked: false
     }));
   }
 
   private mapPostsForAuthenticated(posts: Post[], user: AuthorPost, likes: number[]): Post[] {
-      return posts.map(post => ({
-          ...post,
-          isPostOwner: post.author.id === user.id,
-          isLiked: likes.includes(post.id)
-      }));
+    
+    return posts.map(post => ({
+        ...post,
+        isOwnerOrTeamEdit: post.author.id === user.id ? true:
+                    post.author.team === "None" || user.team === "None"? false:
+                    post.author.team === user.team && post.teamEdit ? true: false,
+        isLiked: likes.includes(post.id)
+    }));
   }
 
   onPostDeleted(postId: number) {
