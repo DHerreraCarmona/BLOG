@@ -3,6 +3,7 @@ import { Injectable } from '@angular/core';
 
 import {environment} from '@env/enviroments.prod'
 import { Like } from '@shared/models/like';
+import { Pagination } from '@shared/models/pagination';
 import { catchError, map, Observable, of, tap } from 'rxjs';
 
 interface LikeResponse {
@@ -27,8 +28,9 @@ export class LikeService {
     private http: HttpClient
   ) { }
 
-  getLikes(postId: number): Observable<{results: Like[]}> {
-    return this.http.get<{results: Like[]}>(`${this.apiUrl}post/${postId}/likes`)
+  getLikes(postId: number,page:number=1): Observable<{pagination:Pagination;results: Like[]}>{
+    return this.http.get<{pagination:Pagination;results: Like[]}>
+    (`${this.apiUrl}likes/post/${postId}/?page=${page}`)
   }
 
   getLikesByUser(userId: number): Observable<number[]> {

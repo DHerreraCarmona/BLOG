@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 
 import {environment} from '@env/enviroments.prod'
 import { Post,PostDetail,PostEditCreate} from '@shared/models/post';
+import { Pagination } from '@shared/models/pagination';
 import { Observable } from 'rxjs';
 
 @Injectable({
@@ -16,9 +17,9 @@ export class PostService {
     private http: HttpClient
   ) { }
 
-  getAllPosts(): Observable<{ results: Post[] }> {
-    return this.http.get<{ results: Post[] }>(`${this.apiUrl}post/`,
-    );
+  getAllPosts(page:number=1): Observable<{ pagination:Pagination; results:Post[]}>{
+    return this.http.get<{ pagination:Pagination; results:Post[] }>
+    (`${this.apiUrl}post/?page=${page}`);
   }
   
   getPostDetail(id: number){

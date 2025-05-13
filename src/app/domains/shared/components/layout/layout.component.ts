@@ -12,7 +12,7 @@ import { Observable } from 'rxjs';
 
 @Component({
   selector: 'app-layout',
-  imports: [RouterModule, HeaderComponent, PostListComponent,CommonModule],
+  imports: [RouterModule, HeaderComponent,PostListComponent,CommonModule],
   templateUrl: './layout.component.html',
 })
 export class LayoutComponent {

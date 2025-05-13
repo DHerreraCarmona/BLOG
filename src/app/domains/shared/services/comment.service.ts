@@ -3,7 +3,8 @@ import { Injectable } from '@angular/core';
 
 import {environment} from '@env/enviroments.prod'
 import { Comment, createCommentModel } from '@shared/models/comment';
-
+import { Pagination } from '@shared/models/pagination';
+import { Observable } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
@@ -15,8 +16,9 @@ export class CommentService {
     private http: HttpClient
   ) { }
 
-  getComments(id: number){
-    return this.http.get<Comment[]>(this.url + `post/${id}/comments/`);
+  getComments(id: number,page:number=1): Observable<{pagination:Pagination;results: Comment[]}>{
+    return this.http.get<{pagination:Pagination; results: Comment[]}>
+    (this.url + `comments/post/${id}/?page=${page}`);
   }
 
   postComment(id:number, data: createCommentModel){

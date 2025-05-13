@@ -13,10 +13,14 @@ import { Comment, createCommentModel } from '@shared/models/comment';
 import { CommentService } from '@shared/services/comment.service';
 import { LikeService } from '@shared/services/like.service';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import {PaginationComponent } from '@shared/components/pagination/pagination.component';
+import { Pagination } from '@shared/models/pagination';
+import { Router } from '@angular/router';
+
 
 @Component({
   selector: 'app-detail',
-  imports: [CommonModule,ReactiveFormsModule,OverlayModule],
+  imports: [CommonModule,ReactiveFormsModule,OverlayModule,PaginationComponent],
   templateUrl: './detail.component.html',
 })
 export class DetailComponent {
@@ -34,6 +38,10 @@ export class DetailComponent {
   private authSubscription?: Subscription;  
   private overlayRef: OverlayRef | null = null;
 
+  commentsPag!: Pagination | null;
+  likesPag!: Pagination | null;
+
+
   constructor(
     private postService: PostService,
     private likeService: LikeService,
@@ -47,31 +55,15 @@ export class DetailComponent {
         content: ['', Validators.required],
       });
       this.post = data.post;
+
+      this.likeService.getLikes(this.post.id).subscribe((response) => {
+        this.likes = Array.isArray(response.results) ? response.results.reverse() : [];
+      });
+  
+      this.getComments();
   }
 
   ngOnInit(): void {
-    this.fetchData();
-    this.authSubscription = combineLatest([
-      this.authService.authStatus$,
-      this.authService.currentUser$
-    ]).pipe(
-      tap(([isAuth, user]) => {
-        this.isAuth = isAuth;
-        this.user = user ? { username: user.username } : { username: '' };
-      })
-    ).subscribe();
-  }
-
-  ngOnDestroy(): void {
-    if (this.authSubscription) {
-      this.authSubscription.unsubscribe();
-    }
-    if (this.overlayRef) {  // Destroy overlay if it exists
-      this.overlayRef.dispose();
-    }
-  }
-
-  fetchData() {
     if (!this.post.longContent){
       this.content = this.post.excerpt
     }
@@ -86,13 +78,22 @@ export class DetailComponent {
       });
     }
 
-    this.likeService.getLikes(this.post.id).subscribe((likes) => {
-      this.likes = Array.isArray(likes) ? likes.reverse() : [];
-    });
+    this.authSubscription = combineLatest([
+      this.authService.authStatus$,
+      this.authService.currentUser$
+    ]).pipe(
+      tap(([isAuth, user]) => {
+        this.isAuth = isAuth;
+        this.user = user ? { username: user.username } : { username: '' };
+      })
+    ).subscribe();
+  }
 
-    this.commentService.getComments(this.post.id).subscribe({
-      next: (data) => {
-        this.comments = data;
+  getComments(page: number | undefined = this.commentsPag?.current_page): void {
+    this.commentService.getComments(this.post.id, page).subscribe({
+      next: (response) => {
+        this.comments = response.results;
+        this.commentsPag = response.pagination;
       },
       error: (error) => {
         console.error('Error fetching comments :', error);
@@ -101,20 +102,24 @@ export class DetailComponent {
   }
   
   postComment() {
-    if (this.form.invalid){
-      return;
-    }
-     
-    this.newComment = { 
+    if (this.form.invalid) { return; }
+  
+    this.newComment = {
       author: this.user,
       content: this.form.getRawValue().content
     } as createCommentModel;
-    
+  
     this.commentService.postComment(this.post.id, this.newComment).subscribe({
       next: (comment) => {
-        this.comments = [ ...this.comments,comment];
         this.resetForm();
         this.commentCreated.emit(this.post.id);
+  
+        if (this.commentsPag && this.comments.length >= 5) {
+          const lastPage = this.commentsPag.total_pages+1;
+          this.getComments(lastPage); 
+        } else {
+          this.getComments();
+        }
       },
       error: (error) => {
         console.error('Error creating comment:', error);
@@ -126,8 +131,20 @@ export class DetailComponent {
     this.form.reset();
   }
 
+  paginated(targetPage: number) {
+    this.getComments(targetPage);
+  }
+
   close(){
     this.dialogRef.close(); 
   }  
-    
+
+  ngOnDestroy(): void {
+    if (this.authSubscription) {
+      this.authSubscription.unsubscribe();
+    }
+    if (this.overlayRef) {  // Destroy overlay if it exists
+      this.overlayRef.dispose();
+    }
+  }
 }

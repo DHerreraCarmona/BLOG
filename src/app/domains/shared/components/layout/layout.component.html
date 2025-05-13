@@ -1,6 +1,7 @@
-<div class="container mx-auto">
+<div class="container mx-auto mt-5 ">
     <app-header/>
     <app-post-list/>
+
     <router-outlet/>
     <div class="fixed bottom-6 right-6">
   <button *ngIf="isAuth$ | async" (click)="openCreateModal()"

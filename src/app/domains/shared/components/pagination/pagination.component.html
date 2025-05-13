@@ -1,0 +1,19 @@
+<nav class="relative w-auto flex items-center justify-between p-1 rounded ">
+    <a class="p-1 text-gray-400 hover:text-white transition-transform duration-300 hover:scale-145" 
+    (click)="paginated(-1)">
+        <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+            <path fill-rule="evenodd"
+                d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z" />
+        </svg>
+    </a>
+    <p class="text-gray-400 mx-auto"> 
+       {{pagination?.first_elem}}-{{pagination?.last_elem}} of {{pagination?.total_count}} 
+    </p>
+    <a class="p-1 text-gray-400  hover:text-white transition-transform duration-300 hover:scale-145" 
+        (click)="paginated(1)">
+        <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+            <path fill-rule="evenodd"
+                d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z" />
+        </svg>
+    </a>
+</nav>

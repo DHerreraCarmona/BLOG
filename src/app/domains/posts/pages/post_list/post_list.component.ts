@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { catchError, filter, firstValueFrom, forkJoin, map, of, switchMap, take } from 'rxjs';
 
 import { Post, PostDetail } from '@shared/models/post';
 import { AuthorPost} from '@shared/models/author'
@@ -7,12 +8,12 @@ import { PostComponent } from "@post/components/post/post.component";
 import { AuthService } from '@shared/services/auth.service';
 import { PostService } from '@shared/services/post.service';
 import { LikeService } from '@shared/services/like.service';
-import { catchError, filter, firstValueFrom, forkJoin, map, of, switchMap, take } from 'rxjs';
-import { Like } from '@shared/models/like';
+import { Pagination } from '@shared/models/pagination';
+import { PaginationComponent } from '@shared/components/pagination/pagination.component';
 
 @Component({
   selector: 'app-post-list',
-  imports: [PostComponent,CommonModule],
+  imports: [PostComponent,CommonModule,PaginationComponent],
   templateUrl: './post_list.component.html',
 })
 export class PostListComponent {
@@ -20,6 +21,7 @@ export class PostListComponent {
   posts: Post[]= [];
   currentUserId!: number;
   userLikes: number[] = [];
+  pagination: Pagination | null = null;
 
   showPostDetail = false;
   postDetail!: PostDetail
@@ -33,26 +35,30 @@ export class PostListComponent {
   ngOnInit(): void {
     this.authService.authStatus$.pipe(
       switchMap(isAuth => {
+        // Usuario no autenticado: Cargar posts públicos
         if (!isAuth) {
-            // Usuario no autenticado: Cargar posts públicos
-            return this.postService.getAllPosts().pipe(
-                map(posts => this.mapPostsForAnonymous(posts.results))
-            );
+          return this.postService.getAllPosts().pipe(
+            map(response =>{
+              this.pagination = response.pagination;
+              return this.mapPostsForAnonymous(response.results);
+            })
+          );
         } 
         // Usuario autenticado: Cargar posts y likes del usuario
         return this.authService.currentUser$.pipe(
-            filter(user => user !== null),
-            take(1),
-            switchMap(user =>{
-              this.currentUserId = user.id;
-              return forkJoin({
-                posts: this.postService.getAllPosts(),
-                likes: this.likeService.getLikesByUser(user.id)
-              }).pipe(
-                map(({ posts, likes }) =>
-                    this.mapPostsForAuthenticated(posts.results, user, likes)
-                )
-              );
+          filter(user => user !== null),
+          take(1),
+          switchMap(user =>{
+            this.currentUserId = user.id;
+            return forkJoin({
+              posts: this.postService.getAllPosts(),
+              likes: this.likeService.getLikesByUser(user.id)
+            }).pipe(
+              map(response =>{
+                this.pagination = response.posts.pagination;
+                const mappedPost = this.mapPostsForAuthenticated(response.posts.results, user, response.likes)
+                return mappedPost;
+              }));
           })
         );
       }),
@@ -74,7 +80,6 @@ export class PostListComponent {
   }
 
   private mapPostsForAuthenticated(posts: Post[], user: AuthorPost, likes: number[]): Post[] {
-    
     return posts.map(post => ({
         ...post,
         isOwnerOrTeamEdit: post.author.id === user.id ? true:
@@ -84,8 +89,26 @@ export class PostListComponent {
     }));
   }
 
+  paginated(targetPage: number){
+    if (!this.pagination){
+      return
+    }
+    
+    if (targetPage <= 0 || targetPage > this.pagination.total_pages){
+      return
+    }
+
+    const userString = localStorage.getItem("currentUser");
+    
+    if(userString){
+      this.postService.getAllPosts(targetPage).subscribe(response => {
+        this.pagination = response.pagination;
+        this.posts = this.mapPostsForAuthenticated(response.results, JSON.parse(userString), this.userLikes)
+      });
+    }
+  }
+
   onPostDeleted(postId: number) {
     this.posts = this.posts.filter(post => post.id !== postId);
   }
-
 }
