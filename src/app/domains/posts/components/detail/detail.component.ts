@@ -1,7 +1,7 @@
 import { Component, EventEmitter, Inject, Input, Output, ViewContainerRef } from '@angular/core';
 import { Overlay, OverlayModule, OverlayRef} from '@angular/cdk/overlay';
 import { CommonModule } from '@angular/common';
-import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
+import { Dialog, DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 
 import { AuthorPost, AuthorShort } from '@shared/models/author';
 import { Like } from '@shared/models/like';
@@ -16,6 +16,7 @@ import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angu
 import {PaginationComponent } from '@shared/components/pagination/pagination.component';
 import { Pagination } from '@shared/models/pagination';
 import { Router } from '@angular/router';
+import { CreateEditComponent } from '../createEdit/createEdit.component';
 
 
 @Component({
@@ -25,6 +26,8 @@ import { Router } from '@angular/router';
 })
 export class DetailComponent {
   @Output() commentCreated = new EventEmitter<number>(); 
+  @Output() postLiked = new EventEmitter<number>();
+
   post!: Post;
   content!: string;
   likes: Like[] = [];
@@ -32,15 +35,17 @@ export class DetailComponent {
   isAuth = false;
   user: AuthorShort = {username: ''};
   isOwnerOrTeamEdit = false;
+
+  isDeleteViewOpen = false;
   isLikesOverlayOpen: boolean = false;
   form;
   newComment!:createCommentModel;
   private authSubscription?: Subscription;  
   private overlayRef: OverlayRef | null = null;
-
-  commentsPag!: Pagination | null;
+  
+  likesLoaded: boolean = false;
   likesPag!: Pagination | null;
-
+  commentsPag!: Pagination | null;
 
   constructor(
     private postService: PostService,
@@ -49,6 +54,7 @@ export class DetailComponent {
     private authService: AuthService,
     private formBuilder: FormBuilder,  
     private dialogRef: DialogRef<PostDetail>,
+    private dialog: Dialog,
     @Inject(DIALOG_DATA) private data: { post: Post;},
   ){
       this.form = this.formBuilder.nonNullable.group({
@@ -61,6 +67,23 @@ export class DetailComponent {
       });
   
       this.getComments();
+  }
+
+  getPostLikes(targetPage: number = 1) {
+    if (this.likesLoaded) return;
+    
+    this.likesLoaded = true;
+    this.likeService.getLikes(this.post.id,targetPage).subscribe((response) => {
+      this.likes = Array.isArray(response.results) ? response.results : []
+      this.likesPag = response.pagination;
+    });
+  }
+
+  likesPagination(targetPage: number) {
+    this.likeService.getLikes(this.post.id,targetPage).subscribe((response) => {
+      this.likes = Array.isArray(response.results) ? response.results : []
+      this.likesPag = response.pagination;
+    });
   }
 
   ngOnInit(): void {
@@ -88,6 +111,8 @@ export class DetailComponent {
       })
     ).subscribe();
   }
+
+  
 
   getComments(page: number | undefined = this.commentsPag?.current_page): void {
     this.commentService.getComments(this.post.id, page).subscribe({
@@ -127,12 +152,102 @@ export class DetailComponent {
     });
   }
 
-  resetForm(): void {
-    this.form.reset();
-  }
+  giveLike(){
+    if(!this.isAuth) return;
 
+    this.likeService.giveLike(this.post.id).subscribe({
+      next: ()=>{
+        this.post.isLiked = !this.post.isLiked;
+        this.post.countLikes += this.post.isLiked ? 1 : -1;
+        this.postLiked.emit(this.post.id);
+
+        if(this.post.isLiked){
+          if(this.likesPag && this.likes.length >=15){
+            this.likesLoaded = false;
+            this.getPostLikes();
+          }
+          else{
+            this.likes.push({
+              post: { id: this.post.id, title: this.post.title },
+              author: { username: this.authService.getUser().username }
+            });
+          }
+        }
+        else{
+          if(this.likesPag && this.likes.length==1 && this.likesPag.current_page>1){
+            this.likesLoaded = false;
+            this.getPostLikes(this.likesPag.current_page-1);
+          }
+          else{
+            this.likes = this.likes.filter(like => like.author.username != this.user.username);
+          }
+        }
+      },
+      error(err) {
+        console.error('Giving like/dislike error',err);
+      },
+    })
+  }
+  
   paginated(targetPage: number) {
     this.getComments(targetPage);
+  }
+  
+  toggleLikesOverlay(event: MouseEvent) {
+    this.isLikesOverlayOpen = !this.isLikesOverlayOpen;
+    if (this.isLikesOverlayOpen) {
+      this.getPostLikes();
+      this.clearCloseTimeout();
+    } else {
+      this.clearCloseTimeout();
+    }
+    event.stopPropagation();
+  }
+
+  closeTimeoutId: any;
+  readonly closeDelay = 50;
+
+  startCloseTimeout() {
+    this.closeTimeoutId = setTimeout(() => {
+      this.isLikesOverlayOpen = false;
+    }, this.closeDelay);
+  }
+
+  clearCloseTimeout() {
+    if (this.closeTimeoutId) {
+      clearTimeout(this.closeTimeoutId);
+      this.closeTimeoutId = null;
+    }
+  }
+
+  openEditModal(){
+    this.dialog.open(CreateEditComponent,
+      { minWidth: '75%',
+        maxWidth: '100%',
+        data:{
+          postId: this.post.id,
+          isCreate: false
+        },
+        panelClass: 'Edit-dialog-panel'
+      },
+    );
+  }
+
+  deletePost() {
+    this.postService.deletePost(this.post.id).subscribe({
+      next: (response) => {
+        console.log('Post deleted successfully', response);
+        this.isDeleteViewOpen = false; 
+        location.reload();
+      },
+      error: (error) => {
+        console.error('Error deleting post', error);
+      }
+    });
+  }
+
+  resetForm(): void {
+    this.form.reset();
   }
 
   close(){

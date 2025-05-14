@@ -54,9 +54,10 @@ export class PostListComponent {
               posts: this.postService.getAllPosts(),
               likes: this.likeService.getLikesByUser(user.id)
             }).pipe(
-              map(response =>{
-                this.pagination = response.posts.pagination;
-                const mappedPost = this.mapPostsForAuthenticated(response.posts.results, user, response.likes)
+              map(({ posts, likes }) =>{
+                this.pagination = posts.pagination;
+                this.userLikes = likes;
+                const mappedPost = this.mapPostsForAuthenticated(posts.results, user,likes)
                 return mappedPost;
               }));
           })
@@ -90,10 +91,7 @@ export class PostListComponent {
   }
 
   paginated(targetPage: number){
-    if (!this.pagination){
-      return
-    }
-    
+    if (!this.pagination){return}
     if (targetPage <= 0 || targetPage > this.pagination.total_pages){
       return
     }
@@ -106,6 +104,14 @@ export class PostListComponent {
         this.posts = this.mapPostsForAuthenticated(response.results, JSON.parse(userString), this.userLikes)
       });
     }
+  }
+
+  onPostLiked(postId: number) {
+    if (this.userLikes.includes(postId)) {
+      this.userLikes = this.userLikes.filter(id => id !== postId);
+      return
+    }
+    this.userLikes.push(postId)
   }
 
   onPostDeleted(postId: number) {

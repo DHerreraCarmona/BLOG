@@ -5,7 +5,7 @@ import { Dialog} from '@angular/cdk/dialog';
 import { HeaderComponent } from '../header/header.component';
 import { PostListComponent } from '@post/pages/post_list/post_list.component';
 
-import { EditComponent } from '@post/components/createEdit/createEdit.component';
+import { CreateEditComponent } from '@post/components/createEdit/createEdit.component';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '@shared/services/auth.service';
 import { Observable } from 'rxjs';
@@ -27,7 +27,7 @@ export class LayoutComponent {
   }
 
   openCreateModal(){
-    this.dialog.open(EditComponent,
+    this.dialog.open(CreateEditComponent,
       { minWidth: '75%',
         maxWidth: '75%',
         data:{

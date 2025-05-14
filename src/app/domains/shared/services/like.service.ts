@@ -6,18 +6,6 @@ import { Like } from '@shared/models/like';
 import { Pagination } from '@shared/models/pagination';
 import { catchError, map, Observable, of, tap } from 'rxjs';
 
-interface LikeResponse {
-  results: {
-    post: {
-      id: number;
-      title: string;
-    };
-    author: {
-      username: string;
-    };
-  }[];
-}
-
 @Injectable({
   providedIn: 'root'
 })
@@ -34,9 +22,8 @@ export class LikeService {
   }
 
   getLikesByUser(userId: number): Observable<number[]> {
-    return this.http.get<LikeResponse>(`${this.apiUrl}likes/author/${userId}/`,
-    ).pipe(
-      map(res => res.results.map(like => like.post.id)),
+    return this.http.get<Like[]>(`${this.apiUrl}likes/author/${userId}/`,).pipe(
+      map(response => response.map(like => like.post.id)),
     );
   }
 

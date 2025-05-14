@@ -10,30 +10,34 @@ import { AuthorPost } from '@shared/models/author';
 import { AuthService } from '@shared/services/auth.service';
 import { PostService } from '@shared/services/post.service';
 import { LikeService } from '@shared/services/like.service';
-import { EditComponent } from '../createEdit/createEdit.component';
+import { CreateEditComponent } from '../createEdit/createEdit.component';
 import { DetailComponent } from '../detail/detail.component';
+import { PaginationComponent } from "@shared/components/pagination/pagination.component";
+import { Pagination } from '@shared/models/pagination';
 
 @Component({
   standalone: true,
   selector: 'app-post',
-  imports: [CommonModule,OverlayModule],
+  imports: [CommonModule, OverlayModule, PaginationComponent],
   templateUrl: './post.component.html',
 })
 export class PostComponent implements OnInit, OnDestroy{
   @Input() post!: Post;
   @Output() postDeleted = new EventEmitter<number>();
+  @Output() postLiked = new EventEmitter<number>();
   isAuth = false;
   user: AuthorPost = {id: -1, username: '', team: ''}
   currentUserId: number= -1;
   isOwnerOrTeamEdit = false;
   likes: Like[] = []
   likesLoaded: boolean = false;
+  likesPag!: Pagination | null;
   private authSubscription?: Subscription;
   
   showPostDetail = false;
   isLikesOverlayOpen = false;
   isDeleteViewOpen = false;
-  
+
   constructor(
     private likeService: LikeService,
     private authService: AuthService,
@@ -55,12 +59,13 @@ export class PostComponent implements OnInit, OnDestroy{
     ).subscribe();
   }
   
-  getPostLikes() {
+  getPostLikes(targetPage: number = 1) {
     if (this.likesLoaded) return;
     
     this.likesLoaded = true;
-    this.likeService.getLikes(this.post.id).subscribe((likes) => {
-      this.likes = Array.isArray(likes) ? likes : []
+    this.likeService.getLikes(this.post.id,targetPage).subscribe((response) => {
+      this.likes = Array.isArray(response.results) ? response.results : []
+      this.likesPag = response.pagination;
     });
   }
 
@@ -71,15 +76,28 @@ export class PostComponent implements OnInit, OnDestroy{
       next: ()=>{
         this.post.isLiked = !this.post.isLiked;
         this.post.countLikes += this.post.isLiked ? 1 : -1;
+        this.postLiked.emit(this.post.id);
 
         if(this.post.isLiked){
-          this.likes.push({
-            post: { id: this.post.id, title: this.post.title },
-            author: { username: this.authService.getUser().username }
-          });
+          if(this.likesPag && this.likes.length >=15){
+            this.likesLoaded = false;
+            this.getPostLikes();
+          }
+          else{
+            this.likes.push({
+              post: { id: this.post.id, title: this.post.title },
+              author: { username: this.authService.getUser().username }
+            });
+          }
         }
         else{
-          this.likes = this.likes.filter(like => like.author.username != this.user.username);
+          if(this.likesPag && this.likes.length==1 && this.likesPag.current_page>1){
+            this.likesLoaded = false;
+            this.getPostLikes(this.likesPag.current_page-1);
+          }
+          else{
+            this.likes = this.likes.filter(like => like.author.username != this.user.username);
+          }
         }
       },
       error(err) {
@@ -88,44 +106,13 @@ export class PostComponent implements OnInit, OnDestroy{
     })
   }
 
-  ngOnDestroy(): void {
-    if (this.authSubscription) {
-      this.authSubscription.unsubscribe();
-    }
+  likesPagination(targetPage: number) {
+    this.likeService.getLikes(this.post.id,targetPage).subscribe((response) => {
+      this.likes = Array.isArray(response.results) ? response.results : []
+      this.likesPag = response.pagination;
+    });
   }
-
-  openEditModal(){
-    this.dialog.open(EditComponent,
-      { minWidth: '75%',
-        maxWidth: '75%',
-        data:{
-          postId: this.post.id,
-          isCreate: false
-        }
-      } 
-    );
-  }
-
-  openDetailModal(){
-    const dialogRef = this.dialog.open(DetailComponent, {
-      minWidth: '75%',
-      maxWidth: '75%',
-      data: {
-          post: this.post,
-      },
-      panelClass: 'detail-dialog-panel'
-  });
-
-    if (dialogRef && dialogRef.componentInstance) {
-      dialogRef.componentInstance.commentCreated.subscribe((updatedPostId: number) => {
-        if (updatedPostId === this.post.id) {
-          this.post.countComments++;
-        }
-      });
-    }
-    
-  }
-
+  
   deletePost() {
     this.postService.deletePost(this.post.id).subscribe({
       next: (response) => {
@@ -138,10 +125,76 @@ export class PostComponent implements OnInit, OnDestroy{
       }
     });
   }
+
+  toggleLikesOverlay(event: MouseEvent) {
+    this.isLikesOverlayOpen = !this.isLikesOverlayOpen;
+    if (this.isLikesOverlayOpen) {
+      this.getPostLikes();
+      this.clearCloseTimeout();
+    } else {
+      this.clearCloseTimeout();
+    }
+    event.stopPropagation();
+  }
+
+  closeTimeoutId: any;
+  readonly closeDelay = 50;
+
+  startCloseTimeout() {
+    this.closeTimeoutId = setTimeout(() => {
+      this.isLikesOverlayOpen = false;
+    }, this.closeDelay);
+  }
+
+  clearCloseTimeout() {
+    if (this.closeTimeoutId) {
+      clearTimeout(this.closeTimeoutId);
+      this.closeTimeoutId = null;
+    }
+  }
+
+  openEditModal(){
+    this.dialog.open(CreateEditComponent,
+      { minWidth: '75%',
+        maxWidth: '100%',
+        data:{
+          postId: this.post.id,
+          isCreate: false
+        },
+        panelClass: 'Edit-dialog-panel'
+      },
+    );
+  }
+  
+  openDetailModal(){
+    const dialogRef = this.dialog.open(DetailComponent, {
+      minWidth: '75%',
+      maxWidth: '100%',
+      autoFocus: false,
+      data: {
+        post: this.post,
+      },
+      panelClass: 'detail-dialog-panel'
+    });
+    
+    if (dialogRef && dialogRef.componentInstance) {
+      dialogRef.componentInstance.commentCreated.subscribe((updatedPostId: number) => {
+        if (updatedPostId === this.post.id) {
+          this.post.countComments++;
+        }
+      });
+    }
+  }
+
+  ngOnDestroy(): void {
+    if (this.authSubscription) {
+      this.authSubscription.unsubscribe();
+    }
+  }
 }
 
-  
 
-  
+
+
 
 

@@ -8,12 +8,12 @@ import { tap } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 
 @Component({
-  selector: 'app-edit',
+  selector: 'app-create-edit',
   standalone:true,
   imports: [CommonModule, FormsModule],
   templateUrl: './createEdit.component.html',
 })
-export class EditComponent {
+export class CreateEditComponent {
   postId!: number;
   post!: PostEditCreate;
   isCreate: boolean = false;

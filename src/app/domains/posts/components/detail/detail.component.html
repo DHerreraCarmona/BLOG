@@ -1,9 +1,7 @@
-
-
 <div class="
        container mx-auto bg-white dark:bg-gray-800 shadow-lg rounded-lg
        text-gray-800 dark:text-gray-200
-       max-h-[80vh] overflow-auto no-scrollbar
+       max-h-[90vh] overflow-auto no-scrollbar
      ">
     <div class=" shadow-lg rounded-lg overflow-hidden ">
       <div class="p-6 pb-2">
@@ -25,17 +23,69 @@
             </span>
         </div>
         <p class="text-gray-700 dark:text-gray-300 text-lg mb-4">{{content}}</p>
-        <span class="inline-flex items-center text-sm cursor-pointer"
-                (mouseover)="isLikesOverlayOpen = true;"
-                (mouseleave)="isLikesOverlayOpen = false"
+        <div class="flex justify-between mt-4 pb-1 text-sm text-gray-600 fill-current">
+            <div class="flex items-center">
+                <!-- like button -->
+                <button *ngIf="isAuth"
+                        type="button"
+                        (click)="giveLike()"
+                        class="flex items-center cursor-pointer">
+                    <svg *ngIf="post.isLiked" xmlns="http://www.w3.org/2000/svg"
+                            width="20" height="20"
+                            fill="red" 
+                            class="bi bi-heart-fill text-gray-500"
+                            viewBox="0 0 16 16">
+                        <path d="M8 1.314C12.438-3.248 23.534 4.735 8
+                                15-7.534 4.736 3.562-3.248 8
+                                1.314z"/>
+                    </svg>
+                    <svg *ngIf="!post.isLiked" xmlns="http://www.w3.org/2000/svg"
+                            width="20" height="20"
+                            fill="none" stroke="currentColor" 
+                            class="bi bi-heart text-gray-500"
+                            viewBox="0 0 16 16">
+                        <path d="m8 2.748-.717-.737C5.6.281
+                                2.514.878 1.4 3.053c-.523 1.023-.641
+                                2.5.314 4.385.92 1.815 2.834 3.989
+                                6.286 6.357 3.452-2.368 5.365-4.542
+                                6.286-6.357.955-1.886.838-3.362.314-4.385C13.486.878
+                                10.4.28 8.717 2.01L8 2.748z"/>
+                </svg>
+                </button>
+                <span class="ml-2 text-gray-400 cursor-pointer select-none"
+                (click)="toggleLikesOverlay($event)"
+                (mouseover)="toggleLikesOverlay($event);clearCloseTimeout()"  
+                (mouseleave)="startCloseTimeout()"
                 cdkOverlayOrigin #likesOverlay="cdkOverlayOrigin"
-                (click)="isLikesOverlayOpen =!isLikesOverlayOpen;">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 mr-1 text-red-500 dark:text-red-400">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
-            </svg>
-            {{post.countLikes}} likes
-        </span>
-      </div>
+                >
+                    {{post.countLikes}} likes
+                </span>
+            </div>
+            <div class="flex text-grey" *ngIf="post.isOwnerOrTeamEdit">
+                <!-- Edit button -->
+                <div class="flex items-center mr-4">
+                    <button type="button" class="flex items-center gap-1"
+                    (click)="openEditModal()">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="bi bi-pencil-square text-gray-500" viewBox="0 0 16 16">
+                            <path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z"/>
+                            <path fill-rule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5z"/>
+                        </svg>
+                        <span class=" text-gray-400">Edit</span>
+                    </button>
+                </div>
+                <!-- Delete button -->
+                <div >
+                    <button type="button" class="flex items-center gap-1"
+                    (click)="isDeleteViewOpen = !isDeleteViewOpen">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="bi bi-trash3 text-gray-500 " viewBox="0 0 16 16">
+                            <path d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5M11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1zm1.958 1-.846 10.58a1 1 0 0 1-.997.92h-6.23a1 1 0 0 1-.997-.92L3.042 3.5zm-7.487 1a.5.5 0 0 1 .528.47l.5 8.5a.5.5 0 0 1-.998.06L5 5.03a.5.5 0 0 1 .47-.53Zm5.058 0a.5.5 0 0 1 .47.53l-.5 8.5a.5.5 0 1 1-.998-.06l.5-8.5a.5.5 0 0 1 .528-.47M8 4.5a.5.5 0 0 1 .5.5v8.5a.5.5 0 0 1-1 0V5a.5.5 0 0 1 .5-.5"/>
+                        </svg>
+                        <span class=" text-gray-400">Delete</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
       <div class=" shadow-lg rounded-lg p-6 pt-0">
         <h2 class="text-2xl font-bold mb-1">Comments</h2>
         <span *ngIf="comments.length==0" class="text-gray-400 font-sm"> No comments yet</span>
@@ -80,20 +130,51 @@
         </div>
       </div>
     </div>
-    
-
+    <!-- likes overlay ----------------------------------------------------------------------------------------------------------------------------->
     <ng-template
         cdkConnectedOverlay
         [cdkConnectedOverlayOrigin]="likesOverlay"
         [cdkConnectedOverlayOpen]="isLikesOverlayOpen"
-    >
-        <div
-            class="z-50 my-4 w-60 text-base list-none bg-white rounded divide-y divide-gray-100 shadow"
         >
-            <ul>
-                <li *ngFor="let like of likes">{{like.author.username}}</li>
-            </ul>
+            <div class=" min-w-50 max-w-100 text-base bg-white dark:bg-gray-700 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700"
+                (mouseover)="isLikesOverlayOpen=true; clearCloseTimeout()"
+                (mouseleave)="startCloseTimeout()"
+            >
+                <div *ngIf="post.countLikes>5">
+                    <app-pagination
+                    [pagination]="likesPag"
+                    (changePage)="likesPagination($event)">
+                    </app-pagination>
+                </div>
+                <ul >
+                    <li
+                    *ngFor="let like of likes"
+                    class="px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-900 dark:text-white"
+                    >
+                    {{ like.author.username }}
+                    </li>
+                </ul>
+            </div>
+    </ng-template>
+    <ng-template
+        cdkConnectedOverlay
+        [cdkConnectedOverlayOpen]="isDeleteViewOpen"
+        >
+        <div style="position: fixed; inset: 0; background-color: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10000;"
+            (click)="isDeleteViewOpen = false">
+            <div  class="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6 text-center border border-gray-200 dark:border-gray-700"
+                (click)="$event.stopPropagation()">
+                <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4" >Delete Confirmation</h2>
+                <p class="text-gray-700 dark:text-gray-300 mb-6">Are you sure you want to delete this post: {{post.title}}?</p>
+                <div class="flex justify-center gap-4">
+                    <button  class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-400" (click)="deletePost()">Delete</button>
+                    <button class="px-4 py-2 bg-indigo-500 text-white rounded-md hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                            (click)="isDeleteViewOpen = false"
+                    >
+                        Cancel
+                    </button>
+                </div>
+            </div>
         </div>
     </ng-template>
-
   </div>
