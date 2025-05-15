@@ -115,6 +115,14 @@ export class PostListComponent {
   }
 
   onPostDeleted(postId: number) {
+    if(this.pagination && this.pagination.total_count%10 == 1){
+      this.pagination.total_count -= 1;
+      this.pagination.total_pages -= 1;
+    }
+    if(this.pagination && this.pagination.current_page >1){
+      location.reload();
+      return;
+    }
     this.posts = this.posts.filter(post => post.id !== postId);
   }
 }

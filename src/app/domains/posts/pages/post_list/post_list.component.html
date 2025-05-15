@@ -1,6 +1,6 @@
 <div>
     <app-pagination
-    [style.visibility]="(pagination && pagination.total_pages > 1) ? 'visible' : 'hidden'"
+    [style.visibility]="(pagination && pagination.total_count > 10) ? 'visible' : 'hidden'"
     [pagination]="pagination"
     (changePage)="paginated($event)">
     </app-pagination>
@@ -14,8 +14,10 @@
         </app-post>
     </div>
     <app-pagination
-    [style.visibility]="(pagination && pagination.total_pages > 1) ? 'visible' : 'hidden'"
+    [style.visibility]="(pagination && pagination.total_count > 10) ? 'visible' : 'hidden'"
     [pagination]="pagination"
     (changePage)="paginated($event)">
     </app-pagination>
 </div>
+
+butt
