@@ -71,7 +71,7 @@ export class RegisterComponent {
     this.authService.register(email, password).subscribe({
       next: () => {
         this.status = 'success';
-        this.router.navigate(['/login']);
+        this.router.navigate(['/login'], { queryParams: { registered: true } });
       },
       error: (err) => {
         this.handleAuthError();
@@ -85,5 +85,4 @@ export class RegisterComponent {
     this.form.get('password')?.reset();
     this.form.get('confirmPassword')?.reset();
   }
-  
 }

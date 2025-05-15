@@ -1,6 +1,6 @@
 /* You can add global styles to this file, and also import other style files */
 @import "tailwindcss";
-@import "@angular/cdk/overlay-prebuilt";
+/* @import "@angular/cdk/overlay-prebuilt"; */
 
 @layer utilities {
     /* Hide scrollbar for Chrome, Safari and Opera */

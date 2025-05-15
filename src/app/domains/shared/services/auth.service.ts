@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, firstValueFrom, Observable, of } from 'rxjs';
+import { BehaviorSubject, firstValueFrom, Observable, of, throwError } from 'rxjs';
 import { map, tap, catchError, switchMap } from 'rxjs/operators';
 
 import { environment } from '@env/enviroments.prod';
@@ -138,7 +138,7 @@ export class AuthService {
       }),
       catchError((error) => {
         console.error('Register failed:', error);
-        return of(null);
+        return throwError(() => error);
       })
     );
   }  

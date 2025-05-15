@@ -1,23 +1,19 @@
-<div>
-    <app-pagination
-    [style.visibility]="(pagination && pagination.total_count > 10) ? 'visible' : 'hidden'"
-    [pagination]="pagination"
-    (changePage)="paginated($event)">
-    </app-pagination>
-    <div class="products--grid w-auto ">
-        <app-post 
-            *ngFor="let post of posts"
-            [post]="post"
-            (postDeleted)="onPostDeleted($event)"
-            (postLiked)="onPostLiked($event)"
-        >
-        </app-post>
-    </div>
-    <app-pagination
-    [style.visibility]="(pagination && pagination.total_count > 10) ? 'visible' : 'hidden'"
-    [pagination]="pagination"
-    (changePage)="paginated($event)">
-    </app-pagination>
+<app-pagination
+[style.visibility]="(pagination && pagination.total_count > 10) ? 'visible' : 'hidden'"
+[pagination]="pagination"
+(changePage)="paginated($event)">
+</app-pagination>
+<div class="products--grid w-auto ">
+    <app-post 
+        *ngFor="let post of posts"
+        [post]="post"
+        (postDeleted)="onPostDeleted($event)"
+        (postLiked)="onPostLiked($event)"
+    >
+    </app-post>
 </div>
-
-butt
+<app-pagination
+[style.visibility]="(pagination && pagination.total_count > 10) ? 'visible' : 'hidden'"
+[pagination]="pagination"
+(changePage)="paginated($event)">
+</app-pagination>

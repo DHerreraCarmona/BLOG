@@ -1,4 +1,3 @@
-/** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
     "./src/**/*.{html,ts,js,jsx,tsx}",
@@ -7,7 +6,6 @@ module.exports = {
     "./src/app/shared/**/*.{html,ts}"
   ],
   safelist: [
-    // Colores específicos para los botones
     'bg-success-700', 'hover:bg-success-800', 'focus:ring-success-300',
     'bg-primary-700', 'hover:bg-primary-800', 'focus:ring-primary-300',
     'bg-danger-700', 'hover:bg-danger-800', 'focus:ring-danger-300',
