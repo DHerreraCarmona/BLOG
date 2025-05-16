@@ -92,7 +92,7 @@ describe('RegisterComponent', () => {
       confirmPassword: 'password2'
     });
     component.onSubmit();
-      expect(component.form.valid).toBeFalse();
+    expect(component.form.valid).toBeFalse();
   });
 
   // it('should handle registration error from API', () => {

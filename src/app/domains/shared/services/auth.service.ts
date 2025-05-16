@@ -35,61 +35,31 @@ export class AuthService {
         this.isInitializing = false;
     }
   }
-  
-  get isAuthenticated(): boolean {
-    return this.authStatusSubject.getValue();
-  }
 
-  get user(): AuthorPost | null {
-    return this.currentUserSubject.getValue();
-  }
-
-  private getCsrfToken(): string | null {
-    const match = document.cookie.match(/csrftoken=([^;]+)/);
-    return match ? match[1] : null;
-  }
-
-  fetchCsrf(): Observable<any> {
-    return this.http.get(`${this.apiUrl}csrf/`, { withCredentials: true });
-  }
-
-  getUserApi(): Observable<AuthorPost> {
-    return this.http.get<AuthorPost>(`${this.apiUrl}me/`).pipe(
-      tap(user => {
-        localStorage.setItem('currentUser', JSON.stringify(user));
-        this.currentUserSubject.next(user);
-        this.authStatusSubject.next(true);
+  register(email: string, password: string): Observable<any> {
+    const csrfToken = this.getCsrfToken(); 
+    
+    const body = new URLSearchParams();
+    body.set('email', email);
+    body.set('username', email.substring(0, email.indexOf('@')));
+    body.set('password', password);
+    body.set('group', 'None');
+    
+    return this.http.post(`${this.apiUrl}register/`, body.toString(), {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-CSRFToken': csrfToken ?? ''}
       })
-    );
-  }
-
-  getUser(): AuthorPost {
-    try {
-        const userJson = localStorage.getItem('currentUser');
-        if (userJson) {
-            return JSON.parse(userJson);
-        }
-    } catch (error) {
-        console.error("Error parsing currentUser from localStorage:", error);
-        this.clearAuthData();
-    }
-    return { id: -1, username: '', team: '' };
-}
-
-  checkAuth(): Observable<boolean> {
-    return this.http.get(`${this.apiUrl}me/`, { withCredentials: true }).pipe(
-      map((user: any) => {
-        localStorage.setItem('currentUser', JSON.stringify(user));
-        this.currentUserSubject.next(user);
-        this.authStatusSubject.next(true);
-        return true;
+      .pipe(
+        tap(() => {
+        console.log('Register successful');
       }),
-      catchError(() => {
-        this.clearAuthData();
-        return of(false);
+      catchError((error) => {
+        console.error('Register failed:', error);
+        return throwError(() => error);
       })
     );
-  }
+  }  
 
   login(username: string, password: string): Observable<AuthorPost | null> {
     const csrfToken = this.getCsrfToken(); 
@@ -112,32 +82,6 @@ export class AuthService {
       catchError((error) => {
         console.error('Login failed:', error);
         this.clearAuthData();
-        return of(null);
-      })
-    );
-  }  
-
-  register(email: string, password: string): Observable<any> {
-    const csrfToken = this.getCsrfToken(); 
-    
-    const body = new URLSearchParams();
-    body.set('email', email);
-    body.set('username', email.substring(0, email.indexOf('@')));
-    body.set('password', password);
-    body.set('group', 'None');
-    
-    return this.http.post(`${this.apiUrl}register/`, body.toString(), {
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'X-CSRFToken': csrfToken ?? ''},
-        withCredentials: true  
-      })
-      .pipe(
-        tap(() => {
-        console.log('Register successful');
-      }),
-      catchError((error) => {
-        console.error('Register failed:', error);
         return throwError(() => error);
       })
     );
@@ -155,7 +99,62 @@ export class AuthService {
       })
     );
   }
+  
+  get isAuthenticated(): boolean {
+    return this.authStatusSubject.getValue();
+  }
 
+  get user(): AuthorPost | null {
+    return this.currentUserSubject.getValue();
+  }
+
+  getUser(): AuthorPost {
+    try {
+        const userJson = localStorage.getItem('currentUser');
+        if (userJson) {
+            return JSON.parse(userJson);
+        }
+    } catch (error) {
+        console.error("Error parsing currentUser from localStorage:", error);
+        this.clearAuthData();
+    }
+    return { id: -1, username: '', team: '' };
+  }
+
+  getUserApi(): Observable<AuthorPost> {
+    return this.http.get<AuthorPost>(`${this.apiUrl}me/`).pipe(
+      tap(user => {
+        localStorage.setItem('currentUser', JSON.stringify(user));
+        this.currentUserSubject.next(user);
+        this.authStatusSubject.next(true);
+      })
+    );
+  }
+
+  checkAuth(): Observable<boolean> {
+    return this.http.get(`${this.apiUrl}me/`, { withCredentials: true }).pipe(
+      map((user: any) => {
+        localStorage.setItem('currentUser', JSON.stringify(user));
+        this.currentUserSubject.next(user);
+        this.authStatusSubject.next(true);
+        return true;
+      }),
+      catchError(() => {
+        this.clearAuthData();
+        return of(false);
+      })
+    );
+  }
+
+  private getCsrfToken(): string | null {
+    const match = document.cookie.match(/csrftoken=([^;]+)/);
+    return match ? match[1] : null;
+  }
+
+  fetchCsrf(): Observable<any> {
+    return this.http.get(`${this.apiUrl}csrf/`, { withCredentials: true });
+  }
+  
   private clearAuthData(): void {
     localStorage.removeItem('currentUser');
     this.currentUserSubject.next(null);
