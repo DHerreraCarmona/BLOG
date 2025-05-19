@@ -91,10 +91,11 @@ export class AuthService {
     return this.http.post(`${this.apiUrl}logout/`, {}).pipe(
       tap(() => {
         this.clearAuthData();
+        console.log('Logout successful');
       }),
       catchError((error) => {
         console.error('Logout failed:', error);
-        this.clearAuthData();
+        // this.clearAuthData();
         return of(null);
       })
     );
@@ -156,8 +157,11 @@ export class AuthService {
   }
   
   private clearAuthData(): void {
-    localStorage.removeItem('currentUser');
+    this.isInitializing = false;
     this.currentUserSubject.next(null);
     this.authStatusSubject.next(false);
-}
+    localStorage.removeItem('currentUser');
+    document.cookie = `csrftoken=; expires=${new Date(0).toUTCString()}; path=/;`;
+    document.cookie = `sessionid=; expires=${new Date(0).toUTCString()}; path=/;`;
+  }
 }

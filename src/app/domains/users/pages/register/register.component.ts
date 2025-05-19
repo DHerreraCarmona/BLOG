@@ -45,21 +45,6 @@ export class RegisterComponent {
     }).subscribe(() => {});
   }
 
-  togglePasswordVisibility(): void {
-    this.showPassword = !this.showPassword;
-  }
-  
-  passwordMatchValidator(group: AbstractControl) {
-    const pass = group.get('password')?.value;
-    const confirm = group.get('confirmPassword')?.value;
-    return pass === confirm ? null : { mismatch: true };
-  }
-
-  resetForm(): void {
-    this.form.reset();
-    this.status = 'init';
-  }
-
   onSubmit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
@@ -84,5 +69,20 @@ export class RegisterComponent {
     this.form.setErrors({ unauthenticated: true });
     this.form.get('password')?.reset();
     this.form.get('confirmPassword')?.reset();
+  }
+
+  passwordMatchValidator(group: AbstractControl) {
+    const pass = group.get('password')?.value;
+    const confirm = group.get('confirmPassword')?.value;
+    return pass === confirm ? null : { mismatch: true };
+  }
+
+  togglePasswordVisibility(): void {
+    this.showPassword = !this.showPassword;
+  }
+  
+  resetForm(): void {
+    this.form.reset();
+    this.status = 'init';
   }
 }

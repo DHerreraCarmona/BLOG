@@ -2,12 +2,18 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { RouterTestingModule } from '@angular/router/testing';
-
 import {AbstractControl } from '@angular/forms';
+import { Router } from '@angular/router';
+import { of, throwError } from 'rxjs';
+
 import { RegisterComponent } from './register.component';
 import { AuthService } from '@shared/services/auth.service';
-import { Router } from '@angular/router';
-import { of } from 'rxjs';
+
+const mockData = {
+  email: 'test@example.com',
+  password: 'securePassword123',
+  confirmPassword: 'securePassword123'
+};
 
 describe('RegisterComponent', () => {
   let component: RegisterComponent;
@@ -33,12 +39,14 @@ describe('RegisterComponent', () => {
     fixture = TestBed.createComponent(RegisterComponent);
     component = fixture.componentInstance;
     router = TestBed.inject(Router);
+    spyOn(router, 'navigate');
     fixture.detectChanges();
+
   });
 
   it('should create the register component', () => {
     expect(component).toBeTruthy();
-  });
+  });  
 
   it('should have a registration form with required fields', () => {
     const form = component.form;
@@ -58,20 +66,12 @@ describe('RegisterComponent', () => {
   });
 
   it('should call AuthService.register with valid data and navigate to login', () => {
-    const formData = {
-      email: 'test@example.com',
-      password: 'abc12345',
-      confirmPassword: 'abc12345'
-    };
-
-    component.form.setValue(formData);
+    component.form.setValue(mockData);
     authServiceSpy.register.and.returnValue(of({ success: true }));
-
-    spyOn(router, 'navigate');
 
     component.onSubmit();
 
-    expect(authServiceSpy.register).toHaveBeenCalledWith(formData.email, formData.password);
+    expect(authServiceSpy.register).toHaveBeenCalledWith(mockData.email, mockData.password);
     expect(router.navigate).toHaveBeenCalledWith(['/login'], { queryParams: { registered: true } });
   });
   
@@ -95,21 +95,17 @@ describe('RegisterComponent', () => {
     expect(component.form.valid).toBeFalse();
   });
 
-  // it('should handle registration error from API', () => {
-  //   component.registerForm.setValue({
-  //     username: 'fail@example.com',
-  //     password: 'password123',
-  //     confirmPassword: 'password123'
-  //   });
+  it('should handle registration error from API', () => {
+    component.form.setValue(mockData);
   
-  //   authServiceSpy.register.and.returnValue(
-  //     throwError(() => ({ status: 400, error: { message: 'Email already exists' } }))
-  //   );
+    authServiceSpy.register.and.returnValue(
+      throwError(() => ({ status: 400, error: { message: 'Email already exists' } }))
+    );
   
-  //   component.onSubmit();
+    component.onSubmit();
   
-  //   expect(component.errorMessage).toBe('Email already exists');
-  // });
+    // expect(component.errorMessage).toBe('Email already exists');
+  });
 
 });
 

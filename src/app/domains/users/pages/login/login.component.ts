@@ -42,15 +42,6 @@ export class LoginComponent implements OnInit{
     }).subscribe(() => {});
   }
 
-  togglePasswordVisibility(): void {
-    this.showPassword = !this.showPassword;
-  }
-  
-  resetForm(): void {
-    this.form.reset();
-    this.status = 'init';
-  }
-
   onSubmit(): void {
 
     if (this.form.invalid) {
@@ -84,7 +75,16 @@ export class LoginComponent implements OnInit{
   
   private handleAuthError(): void {
     this.status = 'error';
-    this.form.setErrors({ unauthenticated: true });
+    this.form.setErrors({ invalidLogin: true });
     this.form.get('password')?.reset();
+  }
+
+  togglePasswordVisibility(): void {
+    this.showPassword = !this.showPassword;
+  }
+  
+  resetForm(): void {
+    this.form.reset();
+    this.status = 'init';
   }
 }
