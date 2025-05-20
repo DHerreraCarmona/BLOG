@@ -1,16 +1,16 @@
 <div class="relative mx-auto mt-5 mb-20 max-w-6xl h-full md:px-15 sm:px-5">
   <div class="container mx-auto ">
-    <app-header/>
-    <app-post-list/>
-    <router-outlet/>
+    <app-header />
+    <app-post-list />
+    <router-outlet />
   </div>
   <div class="fixed w-auto bottom-6 right-15 ">
     <button *ngIf="isAuth$ | async" (click)="openCreateModal()"
       class="bg-green-600 text-white font-medium rounded-md px-4 py-2 flex items-center justify-center gap-2 hover:bg-yellow-600 transition duration-300 ease-in-out shadow-lg">
-      
+
       <span class="text-2xl font-bold leading-none">+</span>
       <span class="mt-1 text-base">Create Post</span>
-      
+
     </button>
   </div>
 </div>

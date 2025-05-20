@@ -12,14 +12,11 @@ export class PaginationComponent {
   @Output() changePage = new EventEmitter<number>();
 
   paginated(dir: -1 | 1){
-    if (!this.pagination){
-      return
-    }
+    if (!this.pagination){ return }
     const targetPage = this.pagination?.current_page + dir; 
     if (targetPage <= 0 || targetPage > this.pagination.total_pages){
       return
     }
     this.changePage.emit(targetPage);
   }
-
 }

@@ -35,17 +35,15 @@ export class PostListComponent {
   ngOnInit(): void {
     this.authService.authStatus$.pipe(
       switchMap(isAuth => {
-        // Usuario no autenticado: Cargar posts públicos
-        if (!isAuth) {
+        if (!isAuth) {                              // Usuario no autenticado: Cargar posts públicos
           return this.postService.getAllPosts().pipe(
             map(response =>{
               this.pagination = response.pagination;
               return this.mapPostsForAnonymous(response.results);
             })
           );
-        } 
-        // Usuario autenticado: Cargar posts y likes del usuario
-        return this.authService.currentUser$.pipe(
+        }         
+        return this.authService.currentUser$.pipe(   // Usuario autenticado: Cargar posts y likes del usuario
           filter(user => user !== null),
           take(1),
           switchMap(user =>{

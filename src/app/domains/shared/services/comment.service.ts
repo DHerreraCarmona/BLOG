@@ -1,27 +1,26 @@
+import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 
-import {environment} from '@env/enviroments.prod'
-import { Comment, createCommentModel } from '@shared/models/comment';
+import { environment } from '@env/enviroments.prod';
 import { Pagination } from '@shared/models/pagination';
-import { Observable } from 'rxjs';
+import { Comment, createCommentModel } from '@shared/models/comment';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class CommentService {
   private url = environment.API_URL;
 
-  constructor(
-    private http: HttpClient
-  ) { }
+  constructor(private http: HttpClient) {}
 
-  getComments(id: number,page:number=1): Observable<{pagination:Pagination;results: Comment[]}>{
-    return this.http.get<{pagination:Pagination; results: Comment[]}>
-    (this.url + `comments/post/${id}/?page=${page}`);
+  getComments(id: number, page: number = 1): Observable<{ pagination: Pagination; results: Comment[] }> {
+    return this.http.get<{ pagination: Pagination; results: Comment[] }>(
+      this.url + `comments/post/${id}/?page=${page}`
+    );
   }
 
-  postComment(id:number, data: createCommentModel){
-    return this.http.post<Comment>(this.url + `post/${id}/write-comment/`, data);
+  postComment(id: number, data: createCommentModel) {
+    return this.http.post<Comment>(this.url + `post/${id}/write-comment/`,data);
   }
 }

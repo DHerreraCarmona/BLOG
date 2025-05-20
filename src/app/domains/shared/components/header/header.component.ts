@@ -38,7 +38,7 @@ export class HeaderComponent implements OnInit, OnDestroy{
     this.username = "";
   }
 
-  ngOnDestroy(): void { // Limpia la suscripción al destruir el componente
+  ngOnDestroy(): void { 
       if (this.authSubscription) {
         this.authSubscription.unsubscribe();
       }

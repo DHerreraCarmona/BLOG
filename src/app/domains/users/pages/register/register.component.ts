@@ -1,48 +1,56 @@
-import {CommonModule} from '@angular/common'
+import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Router,RouterLink, RouterOutlet} from '@angular/router';
-import { FormBuilder,FormsModule, Validators, ReactiveFormsModule, AbstractControl } from '@angular/forms';
+import { Router, RouterLink, RouterOutlet } from '@angular/router';
+import {
+  FormBuilder, FormsModule, Validators,
+  ReactiveFormsModule, AbstractControl,
+} from '@angular/forms';
 
+import { environment } from '@env/enviroments.prod';
 import { AuthService } from '@shared/services/auth.service';
 import { BtnComponent } from '@shared/components/btn/btn.component';
-import { environment } from "@env/enviroments.prod";
 @Component({
   selector: 'app-register',
-  imports: [BtnComponent, CommonModule, FormsModule, ReactiveFormsModule, RouterLink],
+  imports: [BtnComponent, CommonModule, FormsModule,
+    ReactiveFormsModule, RouterLink,
+  ],
   templateUrl: './register.component.html',
 })
 export class RegisterComponent {
-
   apiUrl = environment.API_URL;
-  
+
   form;
   email: string = '';
   password: string = '';
   confirmPassword: string = '';
   showPassword = false;
-  showConfirm = false;
   status: 'init' | 'loading' | 'success' | 'error' = 'init';
 
   constructor(
-    private formBuilder: FormBuilder,  
+    private formBuilder: FormBuilder,
     private router: Router,
     private authService: AuthService,
     private http: HttpClient
   ) {
-    this.form = this.formBuilder.nonNullable.group({
-      email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(6)]],
-      confirmPassword: ['', [Validators.required]]
-      }, {
-        validators: this.passwordMatchValidator
-    });
+    this.form = this.formBuilder.nonNullable.group(
+      {
+        email: ['', [Validators.required, Validators.email]],
+        password: ['', [Validators.required, Validators.minLength(6)]],
+        confirmPassword: ['', [Validators.required]],
+      },
+      {
+        validators: this.passwordMatchValidator,
+      }
+    );
   }
 
   ngOnInit(): void {
-    this.http.get(`${this.apiUrl}csrf/`, {
-      withCredentials: true
-    }).subscribe(() => {});
+    this.http
+      .get(`${this.apiUrl}csrf/`, {
+        withCredentials: true,
+      })
+      .subscribe(() => {});
   }
 
   onSubmit(): void {
@@ -60,7 +68,7 @@ export class RegisterComponent {
       },
       error: (err) => {
         this.handleAuthError();
-      }
+      },
     });
   }
 
@@ -80,7 +88,7 @@ export class RegisterComponent {
   togglePasswordVisibility(): void {
     this.showPassword = !this.showPassword;
   }
-  
+
   resetForm(): void {
     this.form.reset();
     this.status = 'init';

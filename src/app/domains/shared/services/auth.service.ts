@@ -1,10 +1,10 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, firstValueFrom, Observable, of, throwError } from 'rxjs';
 import { map, tap, catchError, switchMap } from 'rxjs/operators';
+import { BehaviorSubject, firstValueFrom, Observable, of,throwError,} from 'rxjs';
 
-import { environment } from '@env/enviroments.prod';
 import { AuthorPost } from '@shared/models/author';
+import { environment } from '@env/enviroments.prod';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -16,76 +16,80 @@ export class AuthService {
   private currentUserSubject = new BehaviorSubject<AuthorPost | null>(null);
   currentUser$ = this.currentUserSubject.asObservable();
 
-  private isInitializing = true; 
+  private isInitializing = true;
 
   constructor(private http: HttpClient) {
     const userJson = localStorage.getItem('currentUser');
     if (userJson) {
-        try {
-            const user = JSON.parse(userJson);
-            this.currentUserSubject.next(user);
-            this.authStatusSubject.next(true);
-        } catch (error) {
-            console.error("Error parsing currentUser from localStorage:", error);
-            this.clearAuthData();
-        } finally {
-            this.isInitializing = false;
-        }
-    } else {
+      try {
+        const user = JSON.parse(userJson);
+        this.currentUserSubject.next(user);
+        this.authStatusSubject.next(true);
+      } catch (error) {
+        console.error('Error parsing currentUser from localStorage:', error);
+        this.clearAuthData();
+      } finally {
         this.isInitializing = false;
+      }
+    } else {
+      this.isInitializing = false;
     }
   }
 
   register(email: string, password: string): Observable<any> {
-    const csrfToken = this.getCsrfToken(); 
-    
+    const csrfToken = this.getCsrfToken();
+
     const body = new URLSearchParams();
     body.set('email', email);
     body.set('username', email.substring(0, email.indexOf('@')));
     body.set('password', password);
     body.set('group', 'None');
-    
-    return this.http.post(`${this.apiUrl}register/`, body.toString(), {
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'X-CSRFToken': csrfToken ?? ''}
+
+    return this.http
+      .post(`${this.apiUrl}register/`, body.toString(), {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'X-CSRFToken': csrfToken ?? '',
+        },
       })
       .pipe(
         tap(() => {
-        console.log('Register successful');
-      }),
-      catchError((error) => {
-        console.error('Register failed:', error);
-        return throwError(() => error);
-      })
-    );
-  }  
+          console.log('Register successful');
+        }),
+        catchError((error) => {
+          console.error('Register failed:', error);
+          return throwError(() => error);
+        })
+      );
+  }
 
   login(username: string, password: string): Observable<AuthorPost | null> {
-    const csrfToken = this.getCsrfToken(); 
+    const csrfToken = this.getCsrfToken();
     const body = new URLSearchParams();
     body.set('username', username);
     body.set('password', password);
-  
-    return this.http.post(`${this.apiUrl}login/`, body.toString(), {
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'X-CSRFToken': csrfToken ?? ''  
-      }
-    }).pipe(
-      tap((user:any) => {
-        localStorage.setItem('currentUser', JSON.stringify(user));
-        this.currentUserSubject.next(user);
-        this.authStatusSubject.next(true);
-        console.log('Login successful');
-      }),
-      catchError((error) => {
-        console.error('Login failed:', error);
-        this.clearAuthData();
-        return throwError(() => error);
+
+    return this.http
+      .post(`${this.apiUrl}login/`, body.toString(), {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'X-CSRFToken': csrfToken ?? '',
+        },
       })
-    );
-  }  
+      .pipe(
+        tap((user: any) => {
+          localStorage.setItem('currentUser', JSON.stringify(user));
+          this.currentUserSubject.next(user);
+          this.authStatusSubject.next(true);
+          console.log('Login successful');
+        }),
+        catchError((error) => {
+          console.error('Login failed:', error);
+          this.clearAuthData();
+          return throwError(() => error);
+        })
+      );
+  }
 
   logout(): Observable<any> {
     return this.http.post(`${this.apiUrl}logout/`, {}).pipe(
@@ -100,7 +104,7 @@ export class AuthService {
       })
     );
   }
-  
+
   get isAuthenticated(): boolean {
     return this.authStatusSubject.getValue();
   }
@@ -111,20 +115,20 @@ export class AuthService {
 
   getUser(): AuthorPost {
     try {
-        const userJson = localStorage.getItem('currentUser');
-        if (userJson) {
-            return JSON.parse(userJson);
-        }
+      const userJson = localStorage.getItem('currentUser');
+      if (userJson) {
+        return JSON.parse(userJson);
+      }
     } catch (error) {
-        console.error("Error parsing currentUser from localStorage:", error);
-        this.clearAuthData();
+      console.error('Error parsing currentUser from localStorage:', error);
+      this.clearAuthData();
     }
     return { id: -1, username: '', team: '' };
   }
 
   getUserApi(): Observable<AuthorPost> {
     return this.http.get<AuthorPost>(`${this.apiUrl}me/`).pipe(
-      tap(user => {
+      tap((user) => {
         localStorage.setItem('currentUser', JSON.stringify(user));
         this.currentUserSubject.next(user);
         this.authStatusSubject.next(true);
@@ -155,7 +159,7 @@ export class AuthService {
   fetchCsrf(): Observable<any> {
     return this.http.get(`${this.apiUrl}csrf/`, { withCredentials: true });
   }
-  
+
   private clearAuthData(): void {
     this.isInitializing = false;
     this.currentUserSubject.next(null);
