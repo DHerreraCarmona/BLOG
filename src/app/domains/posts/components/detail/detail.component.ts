@@ -69,23 +69,6 @@ export class DetailComponent {
       this.getComments();
   }
 
-  getPostLikes(targetPage: number = 1) {
-    if (this.likesLoaded) return;
-    
-    this.likesLoaded = true;
-    this.likeService.getLikes(this.post.id,targetPage).subscribe((response) => {
-      this.likes = Array.isArray(response.results) ? response.results : []
-      this.likesPag = response.pagination;
-    });
-  }
-
-  likesPagination(targetPage: number) {
-    this.likeService.getLikes(this.post.id,targetPage).subscribe((response) => {
-      this.likes = Array.isArray(response.results) ? response.results : []
-      this.likesPag = response.pagination;
-    });
-  }
-
   ngOnInit(): void {
     if (!this.post.longContent){
       this.content = this.post.excerpt
@@ -112,8 +95,23 @@ export class DetailComponent {
     ).subscribe();
   }
 
-  
+  getPostLikes(targetPage: number = 1) {
+    if (this.likesLoaded) return;
+    
+    this.likesLoaded = true;
+    this.likeService.getLikes(this.post.id,targetPage).subscribe((response) => {
+      this.likes = Array.isArray(response.results) ? response.results : []
+      this.likesPag = response.pagination;
+    });
+  }
 
+  likesPagination(targetPage: number) {
+    this.likeService.getLikes(this.post.id,targetPage).subscribe((response) => {
+      this.likes = Array.isArray(response.results) ? response.results : []
+      this.likesPag = response.pagination;
+    });
+  }
+  
   getComments(page: number | undefined = this.commentsPag?.current_page): void {
     this.commentService.getComments(this.post.id, page).subscribe({
       next: (response) => {
@@ -258,7 +256,7 @@ export class DetailComponent {
     if (this.authSubscription) {
       this.authSubscription.unsubscribe();
     }
-    if (this.overlayRef) {  // Destroy overlay if it exists
+    if (this.overlayRef) { 
       this.overlayRef.dispose();
     }
   }

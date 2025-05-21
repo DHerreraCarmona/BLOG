@@ -62,15 +62,27 @@ export class PostComponent implements OnInit, OnDestroy {
       .subscribe();
   }
 
+  deletePost() {
+    this.postService.deletePost(this.post.id).subscribe({
+      next: (response) => {
+        console.log('Post deleted successfully', response);
+        this.isDeleteViewOpen = false;
+        this.postDeleted.emit(this.post.id);
+      },
+      error: (error) => {
+        console.error('Error deleting post', error);
+      },
+    });
+  }
+
   getPostLikes(targetPage: number = 1) {
     if (this.likesLoaded) return;
 
     this.likesLoaded = true;
-    this.likeService
-      .getLikes(this.post.id, targetPage).subscribe((response) => {
-        this.likes = Array.isArray(response.results) ? response.results : [];
-        this.likesPag = response.pagination;
-      });
+    this.likeService.getLikes(this.post.id, targetPage).subscribe((response) => {
+      this.likes = Array.isArray(response.results) ? response.results : [];
+      this.likesPag = response.pagination;
+    });
   }
 
   giveLike() {
@@ -120,19 +132,6 @@ export class PostComponent implements OnInit, OnDestroy {
         this.likes = Array.isArray(response.results) ? response.results : [];
         this.likesPag = response.pagination;
       });
-  }
-
-  deletePost() {
-    this.postService.deletePost(this.post.id).subscribe({
-      next: (response) => {
-        console.log('Post deleted successfully', response);
-        this.isDeleteViewOpen = false;
-        this.postDeleted.emit(this.post.id);
-      },
-      error: (error) => {
-        console.error('Error deleting post', error);
-      },
-    });
   }
 
   toggleLikesOverlay(event: MouseEvent) {
@@ -202,4 +201,3 @@ export class PostComponent implements OnInit, OnDestroy {
     }
   }
 }
-

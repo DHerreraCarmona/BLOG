@@ -114,7 +114,7 @@
                 (mouseover)="isLikesOverlayOpen=true; clearCloseTimeout()"
                 (mouseleave)="startCloseTimeout()"
             >
-                <div *ngIf="post.countLikes>5">
+                <div *ngIf="post.countLikes>15">
                     <app-pagination
                     [pagination]="likesPag"
                     (changePage)="likesPagination($event)">

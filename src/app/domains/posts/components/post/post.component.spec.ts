@@ -1,7 +1,7 @@
-import { BehaviorSubject, of } from 'rxjs';
 import { EventEmitter } from '@angular/core';
 import { Dialog } from '@angular/cdk/dialog';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { BehaviorSubject, of, throwError } from 'rxjs';
+import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 
 import { Like } from '@shared/models/like';
 import { PostComponent } from './post.component';
@@ -9,53 +9,38 @@ import { Pagination } from '@shared/models/pagination';
 import { LikeService } from '@shared/services/like.service'; 
 import { AuthService  } from '@shared/services/auth.service';
 import { PostService  } from '@shared/services/post.service'; 
+import { DetailComponent } from '../detail/detail.component';
+import { CreateEditComponent } from '../createEdit/createEdit.component';
+
+import { mockClick,mockLeave,mockLikes,mockPost,mockPagination,mockUser,
+  createAuthServiceMock,createLikeServiceMock,createpostServiceMock,
+  createDialogMock,
+} from '@shared/mocks/mocks'
+
+let authServiceMock: any;
+let likeServiceMock: any;
+let postServiceMock: any;
+let dialogMock: any;
 
 describe('PostComponent', () => {
   let component: PostComponent;
   let fixture: ComponentFixture<PostComponent>;
   
-  let dialogMock: any;
-  let authServiceMock: any;
-  let postServiceMock: any;
-  let likeServiceMock: any;
-  
   beforeEach(async () => {
-    const authStatusSubject = new BehaviorSubject<boolean>(true);
-    const currentUserSubject = new BehaviorSubject(mockUser);
-
-    authServiceMock = {
-      authStatus$: authStatusSubject.asObservable(),
-      currentUser$: currentUserSubject.asObservable(),
-      getUser: jasmine.createSpy().and.returnValue({ username: 'testUser' }),
-    };
-
-    likeServiceMock = {
-      getLikes: jasmine.createSpy().and.returnValue(of({ results: mockLikes, pagination: mockPagination })),
-      giveLike: jasmine.createSpy().and.returnValue(of({})),
-    };
-
-    postServiceMock = {
-      deletePost: jasmine.createSpy().and.returnValue(of({ success: true })),
-    };
-
-    dialogMock = {
-      open: jasmine.createSpy().and.returnValue({
-        componentInstance: {
-          commentCreated: new EventEmitter<number>(),
-        },
-      }),
-    };
+    dialogMock = createDialogMock();
+    authServiceMock = createAuthServiceMock();
+    likeServiceMock = createLikeServiceMock();
+    postServiceMock = createpostServiceMock();
 
     await TestBed.configureTestingModule({
       imports: [PostComponent],
       providers: [
+        { provide: Dialog, useValue: dialogMock },
         { provide: AuthService, useValue: authServiceMock },
         { provide: LikeService, useValue: likeServiceMock },
         { provide: PostService, useValue: postServiceMock },
-        { provide: Dialog, useValue: dialogMock }
       ]
-    })
-    .compileComponents();
+    }).compileComponents();
 
     fixture = TestBed.createComponent(PostComponent);
     component = fixture.componentInstance;
@@ -81,7 +66,28 @@ describe('PostComponent', () => {
     expect(component.post).toEqual(mockPost);
   });
 
-  it('should call getPostLikes depend on likesLoaded status', () => {
+  it('should call deletePost and emit postDeleted', () => {
+    component.deletePost();
+    expect(component.isDeleteViewOpen).toBeFalse();
+    expect(postServiceMock.deletePost).toHaveBeenCalledWith(mockPost.id);
+    expect(component.postDeleted.emit).toHaveBeenCalledWith(mockPost.id);
+    expect(console.log).toHaveBeenCalledOnceWith('Post deleted successfully', { success: true });
+  });
+
+  it('should handle deletePost error', () => {
+    postServiceMock.deletePost.and.returnValue(
+      throwError(()=>{
+        return { error: 'Delete Fail' };
+      })
+    )
+    component.deletePost();
+    expect(component.isDeleteViewOpen).toBeFalse();
+    expect(component.postDeleted.emit).not.toHaveBeenCalled();
+    expect(postServiceMock.deletePost).toHaveBeenCalledWith(mockPost.id);
+    expect(console.error).toHaveBeenCalledOnceWith('Error deleting post', { error: 'Delete Fail'});
+  });
+
+  it('should call getPostLikes based on likesLoaded status', () => {
     component.getPostLikes();        //likesLoaded is False, call service
     expect(component.likesLoaded).toBeTrue;
 
@@ -92,40 +98,148 @@ describe('PostComponent', () => {
     expect(likeServiceMock.getLikes).toHaveBeenCalledTimes(1);
   });
 
+  it('should call giveLike and emit postLiked for like and dislike', () => {
+    component.post.isLiked = false;
+    component.post.countLikes = mockLikes.length;
 
+    component.giveLike();
+
+    expect(component.post.isLiked).toBeTrue();
+    expect(component.post.countLikes).toBe(mockLikes.length + 1);
+    expect(likeServiceMock.giveLike).toHaveBeenCalledWith(mockPost.id);
+    expect(component.postLiked.emit).toHaveBeenCalledWith(mockPost.id);
+
+    component.giveLike();
+    expect(component.post.isLiked).toBeFalse();
+    expect(component.post.countLikes).toBe(mockLikes.length);
+    expect(likeServiceMock.giveLike).toHaveBeenCalledTimes(2);
+    expect(component.postLiked.emit).toHaveBeenCalledTimes(2);
+  });
+
+  it('should handle giveLike error', () => {
+    component.post.countLikes = mockLikes.length;
+    likeServiceMock.giveLike.and.returnValue(
+      throwError(()=>{
+        return { error: 'internal error'};
+      })
+    );
+
+    component.giveLike();
+    expect(component.post.isLiked).toBeFalse();
+    expect(component.postLiked.emit).not.toHaveBeenCalled();
+    expect(component.post.countLikes).toBe(mockLikes.length);
+    expect(likeServiceMock.giveLike).toHaveBeenCalledWith(mockPost.id);
+    expect(console.error).toHaveBeenCalledOnceWith('Giving like/dislike error', { error: 'internal error'});
+  });
   
+  it('should handle likes pagination correctly', () => {
+    spyOn(component, 'getPostLikes').and.callThrough();
 
+    component.likes = mockLikes;
+    component.likesPag = mockPagination;
+
+    component.likes.push({
+      post: { id: 1, title: 'post 1' },
+      author: { username: 'john' },
+    });
+
+    component.post.isLiked = false;
+    component.post.countLikes = component.likes.length;
+
+    expect(component.likes.length).toBe(15);
+
+    component.giveLike();
+    expect(component.getPostLikes).toHaveBeenCalledTimes(1);
+
+    component.likes = [{
+      post: { id: 1, title: 'post 1' },
+      author: { username: 'john' },
+    }];
+    component.likesPag.current_page = 2;
+
+    component.giveLike();
+    expect(component.getPostLikes).toHaveBeenCalledWith(1);
+  });
+
+  it('should open like overlay and emit commentCreated', () => {
+    spyOn(mockClick, 'stopPropagation');
+    spyOn(component, 'getPostLikes');
+    spyOn(component, 'clearCloseTimeout');
+
+    component.toggleLikesOverlay(mockClick);
+    expect(component.isLikesOverlayOpen).toBeTrue();
+    expect(component.getPostLikes).toHaveBeenCalled();
+    expect(mockClick.stopPropagation).toHaveBeenCalled();
+    expect(component.clearCloseTimeout).toHaveBeenCalledTimes(1);
+
+    component.toggleLikesOverlay(mockLeave);
+    expect(component.isLikesOverlayOpen).toBeFalse();
+    expect(component.clearCloseTimeout).toHaveBeenCalledTimes(2);
+  });
+
+  it('should open edit post modal',()=>{
+    const mockDialogRef = {
+      componentInstance: {postId: null}
+    };
+    dialogMock.open.and.returnValue(mockDialogRef);
+
+    component.openEditModal();
+
+    expect(dialogMock.open).toHaveBeenCalled();
+    expect(dialogMock.open).toHaveBeenCalledWith(CreateEditComponent, {
+      minWidth: '75%',
+      maxWidth: '100%',
+      data: {
+        postId: component.post.id,
+        isCreate: false,
+      },
+      panelClass: 'Edit-dialog-panel',
+    });
+  })
+
+  it('should open Detail post modal',()=>{
+    const mockDialogRef = {
+      componentInstance: {
+        commentCreated: new EventEmitter<number>(), // <- esto es lo que necesita
+      }
+    };
+    
+    dialogMock.open.and.returnValue(mockDialogRef);
+    spyOn(mockDialogRef.componentInstance.commentCreated, 'subscribe');
+    
+    component.openDetailModal();
+
+    expect(dialogMock.open).toHaveBeenCalledWith(DetailComponent, {
+      minWidth: '75%',
+      maxWidth: '100%',
+      autoFocus: false,
+      data: {
+        post: component.post,
+      },
+      panelClass: 'detail-dialog-panel',
+    });
+  })
+
+  it('should handle close timeout correctly', () => {
+    component.startCloseTimeout();
+    expect(component.closeTimeoutId).not.toBeNull();
+
+    component.clearCloseTimeout();
+    expect(component.closeTimeoutId).toBeNull();
+  });
+
+  it('should close likes overlay after timeout', fakeAsync(() => {
+    component.isLikesOverlayOpen = true;
+    component.startCloseTimeout();
+    tick(component.closeDelay);
+    expect(component.isLikesOverlayOpen).toBeFalse();
+  }));
+
+  it('should unsubscribe on destroy', () => {
+    const spy = spyOn(component['authSubscription']!, 'unsubscribe');
+    component.ngOnDestroy();
+    expect(spy).toHaveBeenCalled();
+  });
+  
 });
 
-const mockUser = { id: 1, username: 'testUser', team: 'None' };
-
-const mockPost = {
-  id: 1,
-  title: 'Test Post',
-  countLikes: 0,
-  isLiked: false,
-  author: { id: 1, username: 'testUser', team: 'None' },
-  excerpt: '',
-  created_at: '',
-  countComments: 0,
-  teamEdit: false,
-};
-
-const mockPagination: Pagination = {
-  current_page: 1,
-  total_pages: 1,
-  total_count: 2,
-  first_elem: 1,
-  last_elem: 2,
-};
-
-const mockLikes: Like[] = [
-  {
-    post: { id: 1, title: 'post 1' },
-    author: { username: 'john' },
-  },
-  {
-    post: { id: 2, title: 'post 2' },
-    author: { username: 'jane' },
-  },
-];
