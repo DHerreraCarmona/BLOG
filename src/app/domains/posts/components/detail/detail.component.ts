@@ -25,9 +25,10 @@ import { CreateEditComponent } from '../createEdit/createEdit.component';
   templateUrl: './detail.component.html',
 })
 export class DetailComponent {
-  @Output() commentCreated = new EventEmitter<number>(); 
   @Output() postLiked = new EventEmitter<number>();
-
+  @Output() commentCreated = new EventEmitter<number>(); 
+  // @Output() postDeleted = new EventEmitter<number>();
+  
   post!: Post;
   content!: string;
   likes: Like[] = [];

@@ -1,4 +1,5 @@
 import { EventEmitter } from "@angular/core";
+import { Comment } from "@shared/models/comment";
 import { Like } from "@shared/models/like";
 import { Pagination } from "@shared/models/pagination";
 import { BehaviorSubject, of } from "rxjs";
@@ -24,10 +25,33 @@ export const mockPost = {
 export const mockPagination: Pagination = {
   current_page: 1,
   total_pages: 1,
-  total_count: 14,
+  total_count: 2,
   first_elem: 1,
   last_elem: 2,
 };
+
+export const mockComments: Comment[] = [
+  {
+    author: { username: 'john' },
+    content: 'comment 1',
+    created_at: '2025-10-01T00:00:00Z',
+  },
+  {
+    author: { username: 'john' },
+    content: 'comment 2',
+    created_at: '2025-10-01T00:00:00Z',
+  },
+  {
+    author: { username: 'john' },
+    content: 'comment 3',
+    created_at: '2025-10-01T00:00:00Z',
+  },
+  {
+    author: { username: 'john' },
+    content: 'comment 4',
+    created_at: '2025-10-01T00:00:00Z',
+  },
+]
 
 export const mockLikes: Like[] = [
   {
@@ -88,7 +112,6 @@ export const mockLikes: Like[] = [
   }
 ];
 
-
 const authStatusSubject = new BehaviorSubject<boolean>(true);
 const currentUserSubject = new BehaviorSubject(mockUser);
 
@@ -104,6 +127,13 @@ export function createLikeServiceMock(){
   return {
     giveLike: jasmine.createSpy().and.returnValue(of({})),
     getLikes: jasmine.createSpy().and.returnValue(of({ results: mockLikes, pagination: mockPagination })),
+  }
+};
+
+export function createCommentServiceMock(){
+  return {
+    postComment: jasmine.createSpy().and.returnValue(of({})),
+    getComments: jasmine.createSpy().and.returnValue(of({ results: mockComments, pagination: mockPagination })),
   }
 };
 
