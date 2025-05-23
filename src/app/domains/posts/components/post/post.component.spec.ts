@@ -1,36 +1,37 @@
-import { EventEmitter } from '@angular/core';
 import { Dialog } from '@angular/cdk/dialog';
-import { BehaviorSubject, of, throwError } from 'rxjs';
+import { throwError } from 'rxjs';
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 
-import { Like } from '@shared/models/like';
 import { PostComponent } from './post.component';
-import { Pagination } from '@shared/models/pagination';
 import { LikeService } from '@shared/services/like.service'; 
 import { AuthService  } from '@shared/services/auth.service';
 import { PostService  } from '@shared/services/post.service'; 
 import { DetailComponent } from '../detail/detail.component';
 import { CreateEditComponent } from '../createEdit/createEdit.component';
 
-import { mockClick,mockLeave,mockLikes,mockPost,mockPagination,mockUser,
+import { mockClick,mockLeave,mockLikes,createMockLikes,mockPost,mockPagination,mockUser,
   createAuthServiceMock,createLikeServiceMock,createpostServiceMock,
-  createDialogMock,
+  createDialogMock, createMockDetailDialogRef
 } from '@shared/mocks/mocks'
 
+let likesMock: any; 
+let dialogRef: any;
+let dialogMock: any;
 let authServiceMock: any;
 let likeServiceMock: any;
 let postServiceMock: any;
-let dialogMock: any;
 
 describe('PostComponent', () => {
   let component: PostComponent;
   let fixture: ComponentFixture<PostComponent>;
   
   beforeEach(async () => {
-    dialogMock = createDialogMock();
+    likesMock = createMockLikes(); 
+    dialogRef = createMockDetailDialogRef();
+    dialogMock = createDialogMock(dialogRef);
     authServiceMock = createAuthServiceMock();
-    likeServiceMock = createLikeServiceMock();
     postServiceMock = createpostServiceMock();
+    likeServiceMock = createLikeServiceMock(likesMock);
 
     await TestBed.configureTestingModule({
       imports: [PostComponent],
@@ -159,9 +160,10 @@ describe('PostComponent', () => {
 
     component.giveLike();
     expect(component.getPostLikes).toHaveBeenCalledWith(1);
+    
   });
 
-  it('should open like overlay and emit commentCreated', () => {
+  it('should open and close likes overlay and call getPostLikes', () => {
     spyOn(mockClick, 'stopPropagation');
     spyOn(component, 'getPostLikes');
     spyOn(component, 'clearCloseTimeout');
@@ -197,29 +199,28 @@ describe('PostComponent', () => {
     });
   })
 
-  it('should open Detail post modal',()=>{
-    const mockDialogRef = {
-      componentInstance: {
-        commentCreated: new EventEmitter<number>(), // <- esto es lo que necesita
-      }
-    };
-    
-    dialogMock.open.and.returnValue(mockDialogRef);
-    spyOn(mockDialogRef.componentInstance.commentCreated, 'subscribe');
-    
+  it('should open Detail post modal', () => {
     component.openDetailModal();
 
-    expect(dialogMock.open).toHaveBeenCalledWith(DetailComponent, {
-      minWidth: '75%',
-      maxWidth: '100%',
-      autoFocus: false,
-      data: {
-        post: component.post,
-      },
-      panelClass: 'detail-dialog-panel',
-    });
-  })
+    expect(dialogMock.open).toHaveBeenCalledWith(DetailComponent, jasmine.objectContaining({
+      data: { post: component.post }
+    }));
+  });
 
+  it('should handle commentCreated event', () => {
+    component.openDetailModal();
+    dialogRef.componentInstance.commentCreated.emit(mockPost.id);
+
+    expect(component.post.countComments).toBe(1);
+  });
+
+  it('should handle postDeleted event', () => {
+    component.openDetailModal();
+    dialogRef.componentInstance.postDeleted.emit(mockPost.id);
+
+    expect(component.postDeleted.emit).toHaveBeenCalledWith(mockPost.id);
+  });
+  
   it('should handle close timeout correctly', () => {
     component.startCloseTimeout();
     expect(component.closeTimeoutId).not.toBeNull();

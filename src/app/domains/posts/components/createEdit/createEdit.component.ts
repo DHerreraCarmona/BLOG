@@ -1,10 +1,12 @@
+import { tap } from 'rxjs';
+import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { Component, Inject,ChangeDetectorRef } from '@angular/core';
+import { Component, Inject,ChangeDetectorRef, EventEmitter, Output } from '@angular/core';
 import { DialogRef,DIALOG_DATA } from '@angular/cdk/dialog';
+
 
 import { Post, PostEditCreate } from '@shared/models/post';
 import { PostService } from '@shared/services/post.service';
-import { tap } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 
 @Component({
@@ -14,6 +16,8 @@ import { FormsModule } from '@angular/forms';
   templateUrl: './createEdit.component.html',
 })
 export class CreateEditComponent {
+  @Output() postCreateOrEdit = new EventEmitter<[number,string]>();
+
   postId!: number;
   post!: PostEditCreate;
   isCreate: boolean = false;
@@ -28,6 +32,7 @@ export class CreateEditComponent {
   accessLabels = ['Public', 'Authenticated', 'Team', 'Owner'];
 
   constructor(
+    private router: Router,
     private postService: PostService,
     private dialogRef: DialogRef<PostEditCreate>,
     @Inject(DIALOG_DATA) private data: { postId?: number; isCreate?: boolean },
@@ -45,6 +50,46 @@ export class CreateEditComponent {
       content: '',public: 0,authenticated: 1,team: 1,owner: 2
       };
     }
+  }
+
+  onSubmit(){
+    if (!this.post.title || !this.post.content) {
+      alert("Title and content cannot be empty.");
+      return;
+    }
+    
+    [this.post.public,this.post.authenticated,this.post.team,this.post.owner]= this.postAccess;
+    
+    if(this.isCreate){
+      this.postService.createPost(this.post).subscribe({
+        next: (response) => {
+          console.log("Post created successfully:", response);
+          this.dialogRef.close(response);
+          this.router.navigate(['/post']);
+          this.postCreateOrEdit.emit([this.post.id,'create']);
+          
+        },
+        error: (error) => {
+          console.error("Error creating post:", error);
+          alert("An error occurred while updating the post. Please try again.");
+        }
+      });
+      return;
+    }
+    
+    this.postService.postEditPost(this.post).subscribe({
+      next: (response) => {
+        console.log("Post updated successfully:", response);
+        this.dialogRef.close(response);
+        this.router.navigate(['/post']);
+        this.postCreateOrEdit.emit([this.post.id,'edit']);
+
+      },
+      error: (error) => {
+        console.error("Error updating post:", error);
+        alert("An error occurred while updating the post. Please try again.");
+      }
+    });
   }
 
   getOptionsForLevel(index: number) {
@@ -81,43 +126,6 @@ export class CreateEditComponent {
         break;
       }
     }
-  }
-  
-  onSubmit(){
-    if (!this.post.title || !this.post.content) {
-      alert("Title and content cannot be empty.");
-      return;
-    }
-    
-    [this.post.public,this.post.authenticated,this.post.team,this.post.owner]= this.postAccess;
-    
-    if(this.isCreate){
-      this.postService.createPost(this.post).subscribe({
-        next: (response) => {
-          console.log("Post created successfully:", response);
-          this.dialogRef.close(response);
-          location.reload();
-        },
-        error: (error) => {
-          console.error("Error creating post:", error);
-          alert("An error occurred while updating the post. Please try again.");
-        }
-      });
-      return;
-    }
-    
-    this.postService.postEditPost(this.post).subscribe({
-      next: (response) => {
-        console.log("Post updated successfully:", response);
-        this.dialogRef.close(response);
-
-        location.reload();
-      },
-      error: (error) => {
-        console.error("Error updating post:", error);
-        alert("An error occurred while updating the post. Please try again.");
-      }
-    });
   }
 
   close(){

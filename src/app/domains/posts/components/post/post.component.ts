@@ -85,6 +85,15 @@ export class PostComponent implements OnInit, OnDestroy {
     });
   }
 
+  likesPagination(targetPage: number) {
+    this.likeService
+      .getLikes(this.post.id, targetPage)
+      .subscribe((response) => {
+        this.likes = Array.isArray(response.results) ? response.results : [];
+        this.likesPag = response.pagination;
+    });
+  }
+
   giveLike() {
     if (!this.isAuth) return;
 
@@ -123,15 +132,6 @@ export class PostComponent implements OnInit, OnDestroy {
         console.error('Giving like/dislike error', err);
       },
     });
-  }
-
-  likesPagination(targetPage: number) {
-    this.likeService
-      .getLikes(this.post.id, targetPage)
-      .subscribe((response) => {
-        this.likes = Array.isArray(response.results) ? response.results : [];
-        this.likesPag = response.pagination;
-      });
   }
 
   toggleLikesOverlay(event: MouseEvent) {
@@ -176,6 +176,9 @@ export class PostComponent implements OnInit, OnDestroy {
           }
         }
       );
+      dialogRef.componentInstance.postDeleted.subscribe((deletedPostId: number) => {
+        this.postDeleted.emit(deletedPostId);
+      });
     }
   }
 
