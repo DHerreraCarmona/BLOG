@@ -3,7 +3,8 @@
        (click)="$event.stopPropagation()">
     <!-- Modal header -->
     <div class="flex justify-between items-center mb-4">
-      <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Edit Post</h3>
+      <h3 *ngIf="isCreate" class="text-lg font-semibold text-gray-900 dark:text-white">Create New Post</h3>
+      <h3 *ngIf="!isCreate" class="text-lg font-semibold text-gray-900 dark:text-white">Edit Post</h3>
       <button type="button" (click)="close()"
               class="text-gray-400 hover:text-gray-900 dark:hover:text-white">
         <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">

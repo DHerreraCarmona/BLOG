@@ -22,6 +22,8 @@ import {
 import { PaginationComponent } from '@shared/components/pagination/pagination.component';
 import { Pagination } from '@shared/models/pagination';
 import { CreateEditComponent } from '../createEdit/createEdit.component';
+import { environment } from '@env/enviroments.prod';
+import { NotificationService } from '@shared/notifications/notifications.service';
 
 @Component({
   selector: 'app-detail',
@@ -47,9 +49,9 @@ export class DetailComponent {
   comments: Comment[] = [];
   isAuth = false;
   user: AuthorShort = { username: '' };
-  currentUserId: number = -1;
-  isOwner = false;
-  isOwnerOrTeamEdit = false;
+  // currentUserId: number = -1;
+  // isOwner = false;
+  // isOwnerOrTeamEdit = false;
 
   isDeleteViewOpen = false;
   isLikesOverlayOpen: boolean = false;
@@ -68,8 +70,9 @@ export class DetailComponent {
     private authService: AuthService,
     private postService: PostService,
     private likeService: LikeService,
-    private commentService: CommentService,
     private dialogRef: DialogRef<Post>,
+    private commentService: CommentService,
+    private notificationService: NotificationService,
     @Inject(DIALOG_DATA) private data: { post: Post }
   ) {
     this.commentForm = this.formBuilder.nonNullable.group({
@@ -78,9 +81,9 @@ export class DetailComponent {
 
     this.post = data.post;
 
-    // this.likeService.getLikes(this.post.id).subscribe((response) => {
-    //   this.likes = Array.isArray(response.results) ? response.results : [];
-    // });
+    this.likeService.getLikes(this.post.id).subscribe((response) => {
+      this.likes = Array.isArray(response.results) ? response.results : [];
+    });
   }
 
   ngOnInit(): void {
@@ -99,9 +102,9 @@ export class DetailComponent {
     ).subscribe();
   }
 
-  afterViewInit() {
-    this.ready.emit(this);
-  }
+  // afterViewInit() {
+  //   this.ready.emit(this);
+  // }
 
   getPostDetail(): void {
     this.postService.getPostDetail(this.post.id).subscribe({
@@ -111,7 +114,7 @@ export class DetailComponent {
         this.post.countLikes = detail.countLikes;
         this.post.created_at = detail.created_at;
       },
-      error: (err) => console.error('Error fetching post detail:', err)
+      error: (err) => this.notificationService.show('Error fetching post detail', 'error')      
     });
   }
 
@@ -121,11 +124,13 @@ export class DetailComponent {
         this.dialogRef.close();
         this.isDeleteViewOpen = false;
         this.postDeleted.emit(this.post.id);
-        console.log('Post deleted successfully', response);
+        this.notificationService.show('Post deleted succesfully', 'success');
+
       },
       error: (error) => {
         this.isDeleteViewOpen = false;
-        console.error('Error deleting post', error);
+        this.notificationService.show('Error deleting post', 'error');
+
       },
     });
   }
@@ -137,7 +142,8 @@ export class DetailComponent {
         this.commentsPag = response.pagination;
       },
       error: (error) => {
-        console.error('Error fetching comments:', error);
+        this.notificationService.show('Error fetching post comments', 'error');
+
       },
     });
   }
@@ -177,22 +183,13 @@ export class DetailComponent {
         }
       },
       error: (error) => {
-        console.error('Error creating comment:', error);
+        this.notificationService.show('Error creating new comment', 'error');
       },
     });
   }
 
   giveLike() {
     if (!this.isAuth) return;
-
-    // this.post.isLiked = !this.post.isLiked;
-    // this.post.countLikes += this.post.isLiked ? 1 : -1;
-    // this.postLiked.emit({
-    //   id: this.post.id,
-    //   isLiked: this.post.isLiked,
-    //   countLikes: this.post.countLikes,
-    // });
-
     this.likeClicked.emit();
   }
 
@@ -208,10 +205,24 @@ export class DetailComponent {
       const updatedPost = result as PostEditCreate;
       
       if (updatedPost && typeof updatedPost === 'object' && 'id' in updatedPost) {
+        this.content= updatedPost.content;
         this.post.title = updatedPost.title;
-        this.post.excerpt = updatedPost.content;
+        if ( updatedPost.content.length > environment.maxExcerptLength){
+          this.post.excerpt = updatedPost.content.substring(0, environment.maxExcerptLength);
+          this.post.longContent = true;
+        }else{
+          this.post.excerpt =  updatedPost.content;
+          this.post.longContent = false;
+        }
+        
+        if(updatedPost.team!=2 && this.post.author.id != this.authService.user?.id ){
+          this.post.isOwnerOrTeamEdit = false;
+        }
 
-        console.log(this.post);
+        if(updatedPost.team==0 && this.post.author.id != this.authService.user?.id){
+          this.close();
+        }
+
         this.postLiked.emit({
           id: this.post.id,
           isLiked: this.post.isLiked,
@@ -221,10 +232,10 @@ export class DetailComponent {
     });
   }
 
-  checkPermissions(): void {
-    this.isOwner = this.post.author.id === this.currentUserId;
-    this.isOwnerOrTeamEdit = this.isOwner || this.post.author.team === this.authService.getUser().team;
-  }
+  // checkPermissions(): void {
+  //   this.isOwner = this.post.author.id === this.currentUserId;
+  //   this.isOwnerOrTeamEdit = this.isOwner || this.post.author.team === this.authService.getUser().team;
+  // }
 
   toggleLikesOverlay(event: MouseEvent) {
     this.isLikesOverlayOpen = !this.isLikesOverlayOpen;
@@ -275,47 +286,3 @@ export class DetailComponent {
     }
   }
 }
-
-// giveLike() {
-  //   if (!this.isAuth) return;
-
-  //   this.likeService.giveLike(this.post.id).subscribe({
-  //     next: () => {
-  //       this.post.isLiked = !this.post.isLiked;
-  //       this.post.countLikes += this.post.isLiked ? 1 : -1;
-  //       this.postLiked.emit({ 
-  //         id: this.post.id, 
-  //         isLiked: this.post.isLiked, 
-  //         countLikes: this.post.countLikes 
-  //       });
-
-  //       if (this.post.isLiked) {
-  //         if (this.likesPag && this.likes.length >= 15) {
-  //           this.likesLoaded = false;
-  //           this.getPostLikes();
-  //         } else {
-  //           this.likes.push({
-  //             post: { id: this.post.id, title: this.post.title },
-  //             author: { username: this.authService.getUser().username },
-  //           });
-  //         }
-  //       } else {
-  //         if (
-  //           this.likesPag &&
-  //           this.likes.length == 1 &&
-  //           this.likesPag.current_page > 1
-  //         ) {
-  //           this.likesLoaded = false;
-  //           this.getPostLikes(this.likesPag.current_page - 1);
-  //         } else {
-  //           this.likes = this.likes.filter(
-  //             (like) => like.author.username != this.user.username
-  //           );
-  //         }
-  //       }
-  //     },
-  //     error(err) {
-  //       console.error('Giving like/dislike error', err);
-  //     },
-  //   });
-  // }

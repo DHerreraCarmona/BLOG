@@ -14,6 +14,8 @@ import { CreateEditComponent } from '../createEdit/createEdit.component';
 import { DetailComponent } from '../detail/detail.component';
 import { PaginationComponent } from "@shared/components/pagination/pagination.component";
 import { Pagination } from '@shared/models/pagination';
+import { environment } from '@env/enviroments.prod';
+import { NotificationService } from '@shared/notifications/notifications.service';
 
 @Component({
   standalone: true,
@@ -23,7 +25,7 @@ import { Pagination } from '@shared/models/pagination';
 })
 export class PostComponent implements OnInit, OnDestroy {
   @Input() post!: Post;
-  @Output() postEdited = new EventEmitter<number>();
+  @Output() postEdited = new EventEmitter();
   @Output() postDeleted = new EventEmitter<number>();
   @Output() commentCountUpdated = new EventEmitter<{ id: number, count: number }>();
   @Output() postLiked = new EventEmitter<{id:number,isLiked:boolean,countLikes:number}>();
@@ -46,6 +48,7 @@ export class PostComponent implements OnInit, OnDestroy {
     private likeService: LikeService,
     private authService: AuthService,
     private postService: PostService,
+    private notificationService: NotificationService 
   ) {}
 
   ngOnInit(): void {
@@ -59,7 +62,7 @@ export class PostComponent implements OnInit, OnDestroy {
           this.isOwnerOrTeamEdit = false;
           this.currentUserId = user ? user.id : -1;
           this.user = user || { id: -1, username: '', team: '' };
-          this.checkPermissions();
+          // this.checkPermissions();
         })
       )
       .subscribe();
@@ -71,13 +74,13 @@ export class PostComponent implements OnInit, OnDestroy {
 
   deletePost() {
     this.postService.deletePost(this.post.id).subscribe({
-      next: (response) => {
-        console.log('Post deleted successfully', response);
+      next: (response) => {        
         this.isDeleteViewOpen = false;
         this.postDeleted.emit(this.post.id);
+        this.notificationService.show('Post deleted successfully', 'success');
       },
       error: (error) => {
-        console.error('Error deleting post', error);
+        this.notificationService.show('Error deleting post', 'error');
       },
     });
   }
@@ -114,6 +117,7 @@ export class PostComponent implements OnInit, OnDestroy {
           countLikes: this.post.countLikes 
         });
 
+
         if (this.post.isLiked) {
           if (this.likesPag && this.likes.length >= 15) {
             this.likesLoaded = false;
@@ -139,8 +143,8 @@ export class PostComponent implements OnInit, OnDestroy {
           }
         }
       },
-      error(err) {
-        console.error('Giving like/dislike error', err);
+      error: (error) => {
+        this.notificationService.show('Error giving like/dislike to post', 'error');
       },
     });
   }
@@ -156,23 +160,6 @@ export class PostComponent implements OnInit, OnDestroy {
     event.stopPropagation();
   }
 
-  // openEditModal() {
-  //   const dialogEditRef = this.dialog.open(CreateEditComponent, {
-  //     minWidth: '75%',
-  //     maxWidth: '100%',
-  //     data: {
-  //       postId: this.post.id,
-  //       isCreate: false,
-  //     },
-  //     panelClass: 'Edit-dialog-panel',
-  //   });
-  //   if (dialogEditRef && dialogEditRef.componentInstance) {
-  //     dialogEditRef.componentInstance.postEdited.subscribe(postId=> {
-  //       this.onPostUpdated(postId);
-  //       this.postEdited.emit(postId);
-  //     });
-  //   }
-  // }
   openEditModal() {
     const dialogRef = this.dialog.open(CreateEditComponent, {
       minWidth: '75%',
@@ -182,17 +169,28 @@ export class PostComponent implements OnInit, OnDestroy {
     });
 
     dialogRef.closed.subscribe((result) => {
+      this.postEdited.emit();
       const updatedPost = result as PostEditCreate;
-      
+
       if (updatedPost && typeof updatedPost === 'object' && 'id' in updatedPost) {
-        this.post.excerpt = updatedPost.content;
-        // console.log(this.post);
-        // this.postLiked.emit({
-        //   id: updatedPost.id,
-        //   isLiked: updatedPost.isLiked,
-        //   countLikes: updatedPost.countLikes
-        // });
-        this.openDetailModal(true)
+
+        this.post.title = updatedPost.title;
+
+        if ( updatedPost.content.length > environment.maxExcerptLength){
+          this.post.longContent = true;
+          this.post.excerpt = updatedPost.content.substring(0, environment.maxExcerptLength);
+        }else{
+          this.post.longContent = false;
+          this.post.excerpt =  updatedPost.content;
+        }
+        
+        if(updatedPost.team!=2 && this.post.author.id != this.user.id ){
+          this.post.isOwnerOrTeamEdit = false;
+        }
+
+        if(updatedPost.team!=0 || this.post.author.id == this.user.id ){
+          this.openDetailModal(true)
+        }
       }
     });
   }
@@ -206,13 +204,13 @@ export class PostComponent implements OnInit, OnDestroy {
       panelClass: 'detail-dialog-panel',
     });
 
-    const sub = setInterval(() => {
+    // const sub = setInterval(() => {
       if (dialogRef.componentInstance) {
-        clearInterval(sub);
+        // clearInterval(sub);
 
-        dialogRef.componentInstance.postEdited.subscribe(postId => {
-          this.postEdited.emit(postId);
-          this.openEditModal();
+        dialogRef.componentInstance.postEdited.subscribe(_ => {
+          this.postEdited.emit();
+          // this.openEditModal();
         });
 
         dialogRef.componentInstance.postDeleted.subscribe(deletedPostId => {
@@ -230,76 +228,8 @@ export class PostComponent implements OnInit, OnDestroy {
           this.giveLike();
         });
       }
-    }, 50);
+    // }, 50);
   }
-
-  // onPostUpdated(postId: number) {
-  //   this.postService.getPostDetail(postId).subscribe(postDetail => {
-  //     const dialogRef = this.dialog.open(DetailComponent, {
-  //       minWidth: '75%',
-  //       maxWidth: '100%',
-  //       autoFocus: false,
-  //       data: { post: { ...this.post, ...postDetail, longContent: true } },
-  //       panelClass: 'detail-dialog-panel',
-  //     });
-
-  //     if (!dialogRef || !dialogRef.componentInstance) return;
-
-  //     dialogRef.componentInstance.postEdited.subscribe(postId => {
-  //       this.postEdited.emit(postId);
-  //       this.onPostUpdated(postId);
-  //     });
-
-  //     dialogRef.componentInstance.postDeleted.subscribe(deletedPostId => {
-  //       this.postDeleted.emit(deletedPostId);
-  //     });
-
-  //     dialogRef.componentInstance.commentCreated.subscribe(postId => {
-  //       if (postId === this.post.id) {
-  //         this.post.countComments++;
-  //         this.commentCountUpdated.emit({ id: postId, count: this.post.countComments });
-  //       }
-  //     });
-
-  //     dialogRef.componentInstance.likeClicked.subscribe(() => {
-  //       this.giveLike();
-  //     });
-  //   });
-  // }
-
-  // openDetailModal() {
-  //   const dialogDetailRef = this.dialog.open(DetailComponent, {
-  //     minWidth: '75%',
-  //     maxWidth: '100%',
-  //     autoFocus: false,
-  //     data: {
-  //       post: this.post,
-  //     },
-  //     panelClass: 'detail-dialog-panel',
-  //   });
-  //   if (!dialogDetailRef || !dialogDetailRef.componentInstance) { return; }
-
-  //   dialogDetailRef.componentInstance.postEdited.subscribe(postId=> {
-  //     this.postEdited.emit(postId);
-  //     this.onPostUpdated(postId)        
-  //   });
-    
-  //   dialogDetailRef.componentInstance.postDeleted.subscribe((deletedPostId: number) => {
-  //     if (deletedPostId === this.post.id) {
-  //       this.postDeleted.emit(deletedPostId);
-  //     }
-  //   });
-
-  //   dialogDetailRef.componentInstance.commentCreated.subscribe((postId: number) => {
-  //     if (postId === this.post.id) {
-  //       this.post.countComments++;
-  //     }
-  //   });
-
-  //   dialogDetailRef.componentInstance.likeClicked.subscribe(() => {
-  //     this.giveLike();
-  //   });
-  // }
 
   closeTimeoutId: any;
   readonly closeDelay = 50;
@@ -323,48 +253,3 @@ export class PostComponent implements OnInit, OnDestroy {
     }
   }
 }
-
-// private setupDetailDialogEvents(dialogRef: DialogRef<any>) {
-  //   if (!dialogRef || !dialogRef.componentInstance) return;
-    
-  //   dialogRef.componentInstance.postEdited.subscribe((postId: number) => {
-  //     this.postEdited.emit(postId);
-  //     this.openDetailModal();
-  //   });
-
-  //   dialogRef.componentInstance.postDeleted.subscribe((postId: number) => {
-  //     this.postDeleted.emit(postId);
-  //   });
-
-  //   dialogRef.componentInstance.commentCreated.subscribe((postId: number) => {
-  //     if (postId === this.post.id) {
-  //       this.post.countComments++;
-  //     }
-  //   });
-
-  //   dialogRef.componentInstance.postLiked.subscribe((postId: number) => {
-  //     if (postId === this.post.id) {
-  //       this.post.isLiked = !this.post.isLiked;
-  //       this.post.countLikes += this.post.isLiked ? 1 : -1;
-  //       this.postLiked.emit(postId);
-  //     }
-  //   });
-  // }
-
-
-// getFullPost(id: number): Observable<Post> {
-  //   return this.http.get<PostDetail>(`${this.baseUrl}/${id}`).pipe(
-  //     map(detail => ({
-  //       ...detail,
-  //       excerpt: detail.content.slice(0, 150),
-  //       longContent: true,
-  //     }))
-  //   );
-  // }
-
-
-  // this.postService.getPostDetail(postId).subscribe(updatedPost => {
-        //   const detail
-        //   this.post = updatedPost; // Update this component's @Input post
-        //   this.checkPermissions(); // Re-check permissions
-        // });

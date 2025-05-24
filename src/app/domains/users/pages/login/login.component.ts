@@ -1,3 +1,4 @@
+import { switchMap } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
@@ -8,13 +9,13 @@ import {
 
 import { environment } from '@env/enviroments.prod';
 import { AuthService } from '@shared/services/auth.service';
-import { BtnComponent } from '@shared/components/btn/btn.component';
+import {NotificationService} from '@shared/notifications/notifications.service'
 
 @Component({
   selector: 'app-login',
   standalone: true,
   imports: [
-    BtnComponent, ReactiveFormsModule, FormsModule,
+    ReactiveFormsModule, FormsModule,
     CommonModule, RouterLink,
   ],
   templateUrl: './login.component.html',
@@ -29,10 +30,11 @@ export class LoginComponent implements OnInit {
   status: 'init' | 'loading' | 'success' | 'error' = 'init';
 
   constructor(
-    private formBuilder: FormBuilder,
     private router: Router,
+    private http: HttpClient,
+    private formBuilder: FormBuilder,
     private authService: AuthService,
-    private http: HttpClient
+    private notificationService: NotificationService
   ) {
     this.form = this.formBuilder.nonNullable.group({
       email: ['', [Validators.required, Validators.email]],
@@ -56,25 +58,25 @@ export class LoginComponent implements OnInit {
 
     this.status = 'loading';
     const { email, password } = this.form.getRawValue();
-    this.authService.login(email, password).subscribe({
+
+    this.authService.fetchCsrf().pipe(
+      switchMap(() => this.authService.login(email, password))
+    ).subscribe({
       next: () => {
         this.authService.checkAuth().subscribe({
           next: (auth) => {
             if (auth) {
               this.status = 'success';
               this.router.navigate(['/posts']);
+                this.notificationService.show('Logged in successfully!', 'success');
             } else {
               this.handleAuthError();
             }
           },
-          error: (err) => {
-            this.handleAuthError();
-          },
+          error: () => this.handleAuthError()
         });
       },
-      error: (err) => {
-        this.handleAuthError();
-      },
+      error: () => this.handleAuthError()
     });
   }
 
@@ -82,6 +84,7 @@ export class LoginComponent implements OnInit {
     this.status = 'error';
     this.form.setErrors({ invalidLogin: true });
     this.form.get('password')?.reset();
+    this.notificationService.show('Login failed. Please check your credentials.', 'error');
   }
 
   togglePasswordVisibility(): void {

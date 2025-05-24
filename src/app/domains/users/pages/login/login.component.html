@@ -1,78 +1,164 @@
-<div class="w-screen h-screen bg-black flex items-center justify-center">
-    <div class="w-full max-w-md bg-black rounded-lg shadow-lg p-8 relative">
-        <div class="flex justify-center mb-6">
-            <img 
-                src="assets/logos/logo_h.png" 
-                class="relative w-100 self-center"
-                alt="logo"
-            />
-        </div>
-        <div class="flex flex-col items-center justify-center h-full">
-            <div class=" bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
-                <h2 class="text-center text-2xl font-bold mb-4">User Login</h2>
-                <form (ngSubmit)="onSubmit()" [formGroup]="form"class="space-y-4">
-                    <div class="realtive bg-white rounded-lg mb-6 ">
-                        <div class="relative bg-inherit">
-                            <input type="email" id="email" name="email" formControlName="email" required autocomplete="on" 
-                            class="peer bg-transparent h-10 w-72 rounded-lg text-gray-700 text-sm font-bold-200 placeholder-transparent ring-2 px-2 ring-gray-500 focus:ring-sky-600 focus:outline-none focus:border-rose-600" 
-                            placeholder="Email"/>
-                            <label for="email" class="absolute cursor-text left-0 -top-3 text-sm text-gray-500 bg-inherit mx-1 px-1 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-500 peer-placeholder-shown:top-2 peer-focus:-top-3 peer-focus:text-sky-600 peer-focus:text-sm transition-all">
-                                Email
-                            </label>
-                            <div *ngIf="form.get('email')?.touched && form.get('email')?.invalid" class="text-red-500 text-xs mt-1">
-                                <span *ngIf="form.get('email')?.errors?.['required']">Email is required</span>
-                                <span *ngIf="form.get('email')?.errors?.['email']">Please enter a valid email</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="realtive bg-white rounded-lg mb-6">
-                        <div class="relative w-fit bg-inherit">
-                            <input [type]="showPassword ? 'text' : 'password'"  id="password" name="password" formControlName="password" required autocomplete="on"
-                            class="peer bg-transparent h-10 w-72 rounded-lg text-gray-700 text-sm font-bold-200 placeholder-transparent ring-2 px-2 ring-gray-500 focus:ring-sky-600 focus:outline-none focus:border-rose-600" 
-                            placeholder="Type inside me"/>
-                            <label for="password" class="absolute cursor-text left-0 -top-3 text-sm text-gray-500 bg-inherit mx-1 px-1 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-500 peer-placeholder-shown:top-2 peer-focus:-top-3 peer-focus:text-sky-600 peer-focus:text-sm transition-all">
-                                Password
-                            </label>
-
-    
-                            <button type="button" (click)="togglePasswordVisibility()" class="absolute inset-y-0 right-0 pr-3 flex items-center">
-                                <svg *ngIf="!showPassword" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                </svg>
-                                <svg *ngIf="showPassword" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div *ngIf="form.get('password')?.touched && form.get('password')?.invalid" class="text-red-500 text-xs">
-                            <span *ngIf="form.get('password')?.errors?.['required']">Password is required</span>
-                            <span *ngIf="form.get('password')?.errors?.['minlength']">Password must be at least 6 characters</span>
-                    </div>
-
-                    <div *ngIf="status === 'error'" class=" text-red-700 text-sm ">
-                        Username or Password incorrect!
-                    </div>
-
-                    <div class="flex items-center justify-evenly">
-                        <app-btn [typeBtn]="'submit'" [color]="'success'" [disabled]="form.invalid || status === 'loading'">
-                            <span *ngIf="status !== 'loading'">Login</span>
-                            <span *ngIf="status === 'loading'">Logging in...</span>
-                        </app-btn>
-                        <app-btn [typeBtn]="'reset'" [color]="'danger'" (click)="resetForm()">Cancel</app-btn>
-                    </div>
-                </form>
-                <p class="text-center text-s mt-4">
-                    don't have an account? <a routerLink="/register" class="text-blue-500 hover:text-blue-700">Register</a>
-                </p>
-                <p class="text-center text-gray-500 text-xs mt-4">
-                    &copy;2025 me
-                </p>
-            </div>
-        </div>
+<div
+  class="w-screen h-screen bg-black dark:bg-gray-900 flex items-center justify-center px-4"
+>
+  <div
+    class="container mx-auto max-w-md bg-white dark:bg-gray-800 shadow-lg rounded-lg overflow-hidden"
+  >
+    <!-- Logo -->
+    <div class="flex justify-center mt-6">
+      <img src="assets/logos/logo_h.png" alt="logo" class="w-36" />
     </div>
-</div>
 
+    <!-- Login Card -->
+    <div class="px-8 py-6">
+      <h2
+        class="text-2xl font-bold text-center text-gray-800 dark:text-gray-100 mb-6"
+      >
+        User Login
+      </h2>
+
+      <form (ngSubmit)="onSubmit()" [formGroup]="form" class="space-y-4">
+        <!-- Email Field -->
+        <div>
+          <label
+            for="email"
+            class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+            >Email</label
+          >
+          <input
+            type="email"
+            id="email"
+            name="email"
+            formControlName="email"
+            class="mt-1 block w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
+            placeholder="Enter your email"
+            required
+          />
+          <div
+            *ngIf="form.get('email')?.touched && form.get('email')?.invalid"
+            class="text-red-500 text-sm mt-1"
+          >
+            <span *ngIf="form.get('email')?.errors?.['required']"
+              >Email is required</span
+            >
+            <span *ngIf="form.get('email')?.errors?.['email']"
+              >Please enter a valid email</span
+            >
+          </div>
+        </div>
+
+        <!-- Password Field -->
+        <div>
+          <label
+            for="password"
+            class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+            >Password</label
+          >
+          <div class="relative">
+            <input
+              [type]="showPassword ? 'text' : 'password'"
+              id="password"
+              name="password"
+              formControlName="password"
+              class="mt-1 block w-full px-4 py-2 pr-10 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500"
+              placeholder="Enter your password"
+              required
+            />
+            <button
+              type="button"
+              (click)="togglePasswordVisibility()"
+              class="absolute inset-y-0 right-2 flex items-center"
+            >
+              <svg
+                *ngIf="!showPassword"
+                class="w-5 h-5 text-gray-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                />
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7
+                         -1.274 4.057-5.064 7-9.542 7 -4.477 0-8.268-2.943-9.542-7z"
+                />
+              </svg>
+              <svg
+                *ngIf="showPassword"
+                class="w-5 h-5 text-gray-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7
+                         a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242
+                         M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59"
+                />
+              </svg>
+            </button>
+          </div>
+          <div
+            *ngIf="
+              form.get('password')?.touched && form.get('password')?.invalid
+            "
+            class="text-red-500 text-sm mt-1"
+          >
+            <span *ngIf="form.get('password')?.errors?.['required']"
+              >Password is required</span
+            >
+            <span *ngIf="form.get('password')?.errors?.['minlength']"
+              >Password must be at least 6 characters</span
+            >
+          </div>
+        </div>
+
+        <!-- Error Message -->
+        <div
+          *ngIf="status === 'error'"
+          class="text-red-600 text-sm text-center"
+        >
+          Username or Password incorrect!
+        </div>
+
+        <!-- Buttons -->
+        <div class="flex justify-around mt-4">
+          <button
+            typeBtn="submit"
+            class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+            [disabled]="form.invalid || status === 'loading'"
+          >
+            <span *ngIf="status !== 'loading'">Login</span>
+            <span *ngIf="status === 'loading'">Logging in...</span>
+          </button>
+          <button
+            typeBtn="reset"
+            class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+            (click)="resetForm()"
+          >
+            Cancel
+          </button>
+        </div>
+      </form>
+
+      <p class="text-center text-sm mt-6 text-gray-500 dark:text-gray-400">
+        Don't have an account?
+        <a routerLink="/register" class="text-blue-500 hover:text-blue-700"
+          >Register</a
+        >
+      </p>
+
+      <p class="text-center text-xs text-gray-400 mt-4">&copy;2025 me</p>
+    </div>
+  </div>
+</div>

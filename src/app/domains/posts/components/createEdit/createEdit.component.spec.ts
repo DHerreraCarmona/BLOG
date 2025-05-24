@@ -29,7 +29,7 @@ describe('CreateEditComponent', () => {
     component = fixture.componentInstance;
     spyOn(console,'log');
     spyOn(console,'error');
-    spyOn(component.postCreateOrEdit,'emit');
+    spyOn(component.postCreated,'emit');
     fixture.detectChanges();
   });
 
@@ -84,7 +84,7 @@ describe('CreateEditComponent', () => {
     );
 
     component.onSubmit();
-    expect(component.postCreateOrEdit.emit).not.toHaveBeenCalled();
+    expect(component.postCreated.emit).not.toHaveBeenCalled();
     expect(console.error).toHaveBeenCalledWith("Error creating post:", { error: 'Create Fail' });
   });
 
@@ -99,7 +99,7 @@ describe('CreateEditComponent', () => {
     );
 
     component.onSubmit();
-    expect(component.postCreateOrEdit.emit).not.toHaveBeenCalled();
+    expect(component.postCreated.emit).not.toHaveBeenCalled();
     expect(console.error).toHaveBeenCalledWith("Error updating post:", { error: 'Edit Fail' });
   });
 

@@ -7,10 +7,10 @@
     <app-post 
         *ngFor="let post of posts"
         [post]="post"
-        (postLiked)="onPostLiked($event)"
-        (postDeleted)="onPostDeleted($event)"
         (postEdited)="onPostEdit()"
-    >
+        (postDeleted)="onPostDeleted()"
+        (postLiked)="onPostLiked($event)"
+        >
     </app-post>
 </div>
 <app-pagination

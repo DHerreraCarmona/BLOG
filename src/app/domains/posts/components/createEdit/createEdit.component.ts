@@ -4,10 +4,10 @@ import { CommonModule } from '@angular/common';
 import { Component, Inject,ChangeDetectorRef, EventEmitter, Output } from '@angular/core';
 import { DialogRef,DIALOG_DATA } from '@angular/cdk/dialog';
 
-
 import { Post, PostDetail, PostEditCreate } from '@shared/models/post';
 import { PostService } from '@shared/services/post.service';
 import { FormsModule } from '@angular/forms';
+import { NotificationService } from '@shared/notifications/notifications.service';
 
 @Component({
   selector: 'app-create-edit',
@@ -25,6 +25,7 @@ export class CreateEditComponent {
   postId!: number;
   post!: PostEditCreate;
   isCreate: boolean = false;
+  originalPost?: PostEditCreate;
 
   accessLevels = [
     {value: 0, access:"Hidden"},
@@ -40,52 +41,61 @@ export class CreateEditComponent {
     private router: Router,
     private postService: PostService,
     private dialogRef: DialogRef<PostEditCreate>,
+    private notificationService: NotificationService,
     @Inject(DIALOG_DATA) private data: { postId?: number; isCreate?: boolean },
   ){
     this.isCreate = data?.isCreate === true;
+
     if (!this.isCreate && data?.postId) {
       this.postId = data.postId;
       this.postService.getEditPost(this.postId).subscribe(post => {
         this.post = post;
+        this.originalPost = { ...post };
         this.postAccess = [post.public, post.authenticated, post.team, post.owner];
       });
-    }
-    else {
-      this.post = {id: 0,title: '',author:{username:""},
-      content: '',public: 0,authenticated: 1,team: 1,owner: 2
+    } else {
+      this.post = {
+        id: 0, title: '', author: { username: '' },
+        content: '', public: 0, authenticated: 1, team: 1, owner: 2
       };
     }
   }
 
-  onSubmit(){
+  onSubmit() {
     if (!this.post.title || !this.post.content) {
-      alert("Title and content cannot be empty.");
+      this.notificationService.show(`Title and content cannot be empty.`, 'error');
       return;
     }
-    
+
     [this.post.public,this.post.authenticated,this.post.team,this.post.owner]= this.postAccess;
-    
-    const action: 'create' | 'edit' = this.isCreate ? 'create' : 'edit';
 
+    const action: 'creat' | 'edit' = this.isCreate ? 'creat' : 'edit';
     const callback = (response: PostEditCreate) => {
-      console.log(`Post ${action}d successfully`);
-      // this.dialogRef.close(this.post);
+      this.notificationService.show(`${action}ing post successfully`, 'success');
+    };
+    const errorCallback = (error: any) => {
+      this.notificationService.show(`Error ${action}ing post`, 'error');
     };
 
-    const errorCallback = (error: any) => {
-      console.error(`Error ${action}ing post:`, error);
-      
-      alert(`An error occurred while ${action}ing the post. Please try again.`);
-    };
-    
     if (this.isCreate) {
-      this.postService.createPost(this.post).subscribe({ next: callback, error: errorCallback });
       this.postCreated.emit();
+      this.postService.createPost(this.post).subscribe({ next: callback, error: errorCallback });
 
     } else {
-      this.postService.postEditPost(this.post).subscribe({ next: callback, error: errorCallback });
+      if (
+        this.originalPost &&
+        this.post.title.trim() === this.originalPost.title.trim() &&
+        this.post.content.trim() === this.originalPost.content.trim()
+      ) {
+        this.notificationService.show('No changes made to the post.', 'success');
+        this.close();
+        return;
+      }
+
       this.postEdited.emit(this.post.id);
+      this.postService.postEditPost(this.post).subscribe({ next: callback, error: errorCallback });
     }
+
     this.close();
   }
 

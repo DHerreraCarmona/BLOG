@@ -9,10 +9,10 @@ import {
 
 import { environment } from '@env/enviroments.prod';
 import { AuthService } from '@shared/services/auth.service';
-import { BtnComponent } from '@shared/components/btn/btn.component';
+import { NotificationService } from '@shared/notifications/notifications.service';
 @Component({
   selector: 'app-register',
-  imports: [BtnComponent, CommonModule, FormsModule,
+  imports: [ CommonModule, FormsModule,
     ReactiveFormsModule, RouterLink,
   ],
   templateUrl: './register.component.html',
@@ -28,10 +28,11 @@ export class RegisterComponent {
   status: 'init' | 'loading' | 'success' | 'error' = 'init';
 
   constructor(
-    private formBuilder: FormBuilder,
     private router: Router,
+    private http: HttpClient,
+    private formBuilder: FormBuilder,
     private authService: AuthService,
-    private http: HttpClient
+    private notificationService: NotificationService
   ) {
     this.form = this.formBuilder.nonNullable.group(
       {
@@ -64,6 +65,8 @@ export class RegisterComponent {
     this.authService.register(email, password).subscribe({
       next: () => {
         this.status = 'success';
+              this.notificationService.show('User registered successfully', 'success');
+
         this.router.navigate(['/login'], { queryParams: { registered: true } });
       },
       error: (err) => {
@@ -74,9 +77,10 @@ export class RegisterComponent {
 
   private handleAuthError(): void {
     this.status = 'error';
-    this.form.setErrors({ unauthenticated: true });
     this.form.get('password')?.reset();
     this.form.get('confirmPassword')?.reset();
+    this.form.setErrors({ unauthenticated: true });
+    this.notificationService.show('Register failed. Please try again', 'error');
   }
 
   passwordMatchValidator(group: AbstractControl) {

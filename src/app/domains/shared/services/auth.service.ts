@@ -95,12 +95,11 @@ export class AuthService {
     return this.http.post(`${this.apiUrl}logout/`, {}).pipe(
       tap(() => {
         this.clearAuthData();
-        console.log('Logout successful');
       }),
       catchError((error) => {
-        console.error('Logout failed:', error);
         // this.clearAuthData();
-        return of(null);
+        // return of(null);
+        return throwError(() => error);
       })
     );
   }
