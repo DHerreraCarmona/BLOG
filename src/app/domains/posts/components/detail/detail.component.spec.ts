@@ -76,8 +76,8 @@ describe('DetailComponent', () => {
     expect(component.isOwnerOrTeamEdit).toBe(false);
 
     expect(component.post).toEqual(mockPost);
-    expect(component.form).toBeDefined();
-    expect(component.form.value).toEqual({ content: '' });
+    expect(component.commentForm).toBeDefined();
+    expect(component.commentForm.value).toEqual({ content: '' });
 
     expect(component.likes).toEqual(mockLikes);
     expect(likeServiceMock.getLikes).toHaveBeenCalled();
@@ -119,11 +119,11 @@ describe('DetailComponent', () => {
   });
 
   it('should create a comment calling commentService and emit commentCreated',()=>{
-    component.form.setValue({content: 'Create comment 1'});
-    expect(component.form.valid).toBeTrue ();
+    component.commentForm.setValue({content: 'Create comment 1'});
+    expect(component.commentForm.valid).toBeTrue ();
     component.postComment();
 
-    expect(component.form.valid).toBeFalse();
+    expect(component.commentForm.valid).toBeFalse();
     expect(component.commentCreated.emit).toHaveBeenCalled();
     expect(commentServiceMock.postComment).toHaveBeenCalledOnceWith(
       component.post.id, mockNewComment
@@ -132,12 +132,12 @@ describe('DetailComponent', () => {
 
   it('should not create comment if content is empty',()=>{
     component.postComment();
-    expect(component.form.valid).toBeFalse();
+    expect(component.commentForm.valid).toBeFalse();
     expect(commentServiceMock.postComment).not.toHaveBeenCalled();
   });
 
   it('should hancdle create a comment error',()=>{
-    component.form.setValue({content: 'Create comment 1'});
+    component.commentForm.setValue({content: 'Create comment 1'});
     commentServiceMock.postComment.and.returnValue(
       throwError(()=>{
         return{ error: 'postComment Fail'};
@@ -187,7 +187,7 @@ describe('DetailComponent', () => {
     component.comments = Array(5).fill({ content: 'test', author: mockShortUser, created_at: '' });
     component.commentsPag = { ...mockPagination, total_pages: 2 };
   
-    component.form.setValue({ content: 'New comment' });  
+    component.commentForm.setValue({ content: 'New comment' });  
     component.postComment();
   
     expect(component.commentCreated.emit).toHaveBeenCalledWith(mockPost.id);

@@ -1,10 +1,10 @@
 import { CommonModule } from '@angular/common';
-import { combineLatest, map, Subscription, tap } from 'rxjs';
+import { combineLatest, map, Observable, Subscription, take, tap } from 'rxjs';
 import { OverlayModule} from '@angular/cdk/overlay';
-import { Dialog} from '@angular/cdk/dialog';
+import { Dialog, DialogRef} from '@angular/cdk/dialog';
 import { Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
 
-import { Post } from '@shared/models/post';
+import { Post, PostDetail } from '@shared/models/post';
 import { Like } from '@shared/models/like';
 import { AuthorPost } from '@shared/models/author';
 import { AuthService } from '@shared/services/auth.service';
@@ -23,8 +23,10 @@ import { Pagination } from '@shared/models/pagination';
 })
 export class PostComponent implements OnInit, OnDestroy {
   @Input() post!: Post;
-  @Output() postLiked = new EventEmitter<number>();
+  @Output() postEdited = new EventEmitter<number>();
   @Output() postDeleted = new EventEmitter<number>();
+  @Output() commentCountUpdated = new EventEmitter<{ id: number, count: number }>();
+  @Output() postLiked = new EventEmitter<{id:number,isLiked:boolean,countLikes:number}>();
 
   isAuth = false;
   currentUserId: number = -1;
@@ -40,10 +42,10 @@ export class PostComponent implements OnInit, OnDestroy {
   isLikesOverlayOpen = false;
 
   constructor(
+    private dialog: Dialog,
     private likeService: LikeService,
     private authService: AuthService,
     private postService: PostService,
-    private dialog: Dialog
   ) {}
 
   ngOnInit(): void {
@@ -57,9 +59,14 @@ export class PostComponent implements OnInit, OnDestroy {
           this.isOwnerOrTeamEdit = false;
           this.currentUserId = user ? user.id : -1;
           this.user = user || { id: -1, username: '', team: '' };
+          this.checkPermissions();
         })
       )
       .subscribe();
+  }
+
+  checkPermissions(): void {
+    this.isOwnerOrTeamEdit = this.post.author.id === this.currentUserId || this.post.author.team === this.user.team;
   }
 
   deletePost() {
@@ -101,7 +108,11 @@ export class PostComponent implements OnInit, OnDestroy {
       next: () => {
         this.post.isLiked = !this.post.isLiked;
         this.post.countLikes += this.post.isLiked ? 1 : -1;
-        this.postLiked.emit(this.post.id);
+        this.postLiked.emit({ 
+          id: this.post.id, 
+          isLiked: this.post.isLiked, 
+          countLikes: this.post.countLikes 
+        });
 
         if (this.post.isLiked) {
           if (this.likesPag && this.likes.length >= 15) {
@@ -146,7 +157,7 @@ export class PostComponent implements OnInit, OnDestroy {
   }
 
   openEditModal() {
-    this.dialog.open(CreateEditComponent, {
+    const dialogEditRef = this.dialog.open(CreateEditComponent, {
       minWidth: '75%',
       maxWidth: '100%',
       data: {
@@ -155,10 +166,47 @@ export class PostComponent implements OnInit, OnDestroy {
       },
       panelClass: 'Edit-dialog-panel',
     });
+    if (dialogEditRef && dialogEditRef.componentInstance) {
+      dialogEditRef.componentInstance.postEdited.subscribe(postId=> {
+        this.postEdited.emit(postId);
+        this.onPostUpdated(postId);
+      });
+    }
+  }
+
+  onPostUpdated(postId: number) {
+    this.postService.getPostDetail(postId).subscribe(postDetail => {
+      const dialogRef = this.dialog.open(DetailComponent, {
+        minWidth: '75%',
+        maxWidth: '100%',
+        autoFocus: false,
+        data: { post: { ...this.post, ...postDetail, longContent: true } },
+        panelClass: 'detail-dialog-panel',
+      });
+  
+      // ⬅️ Usa afterClosed como punto seguro
+      dialogRef.closed.subscribe((result) => {
+        const data = result as { liked?: boolean; countLikes?: number; commentsCount?: number };
+
+        if (data?.liked !== undefined && data.countLikes !== undefined) {
+          this.post.isLiked = data.liked;
+          this.post.countLikes = data.countLikes;
+          this.postLiked.emit({
+            id: this.post.id,
+            isLiked: data.liked,
+            countLikes: data.countLikes
+          });
+        }
+
+        if (data?.commentsCount !== undefined) {
+          this.post.countComments = data.commentsCount;
+        }
+      });
+    });
   }
 
   openDetailModal() {
-    const dialogRef = this.dialog.open(DetailComponent, {
+    const dialogDetailRef = this.dialog.open(DetailComponent, {
       minWidth: '75%',
       maxWidth: '100%',
       autoFocus: false,
@@ -167,19 +215,38 @@ export class PostComponent implements OnInit, OnDestroy {
       },
       panelClass: 'detail-dialog-panel',
     });
+    if (!dialogDetailRef || !dialogDetailRef.componentInstance) { return; }
 
-    if (dialogRef && dialogRef.componentInstance) {
-      dialogRef.componentInstance.commentCreated.subscribe(
-        (updatedPostId: number) => {
-          if (updatedPostId === this.post.id) {
-            this.post.countComments++;
-          }
-        }
-      );
-      dialogRef.componentInstance.postDeleted.subscribe((deletedPostId: number) => {
+    dialogDetailRef.componentInstance.postEdited.subscribe(postId=> {
+      this.postEdited.emit(postId);
+      this.onPostUpdated(postId)        
+    });
+    
+    dialogDetailRef.componentInstance.postDeleted.subscribe((deletedPostId: number) => {
+      if (deletedPostId === this.post.id) {
         this.postDeleted.emit(deletedPostId);
-      });
-    }
+      }
+    });
+
+    dialogDetailRef.componentInstance.commentCreated.subscribe((postId: number) => {
+      if (postId === this.post.id) {
+        this.post.countComments++;
+      }
+    });
+
+    dialogDetailRef.componentInstance.postLiked.subscribe((data) => {
+      console.log('like from normal detail');
+
+      if (data.id === this.post.id) {
+        this.post.isLiked = data.isLiked;
+        this.post.countLikes = data.countLikes;
+        this.postLiked.emit({ 
+          id: this.post.id, 
+          isLiked: this.post.isLiked, 
+          countLikes: this.post.countLikes 
+        });
+      }
+    });
   }
 
   closeTimeoutId: any;
@@ -204,3 +271,48 @@ export class PostComponent implements OnInit, OnDestroy {
     }
   }
 }
+
+// private setupDetailDialogEvents(dialogRef: DialogRef<any>) {
+  //   if (!dialogRef || !dialogRef.componentInstance) return;
+    
+  //   dialogRef.componentInstance.postEdited.subscribe((postId: number) => {
+  //     this.postEdited.emit(postId);
+  //     this.openDetailModal();
+  //   });
+
+  //   dialogRef.componentInstance.postDeleted.subscribe((postId: number) => {
+  //     this.postDeleted.emit(postId);
+  //   });
+
+  //   dialogRef.componentInstance.commentCreated.subscribe((postId: number) => {
+  //     if (postId === this.post.id) {
+  //       this.post.countComments++;
+  //     }
+  //   });
+
+  //   dialogRef.componentInstance.postLiked.subscribe((postId: number) => {
+  //     if (postId === this.post.id) {
+  //       this.post.isLiked = !this.post.isLiked;
+  //       this.post.countLikes += this.post.isLiked ? 1 : -1;
+  //       this.postLiked.emit(postId);
+  //     }
+  //   });
+  // }
+
+
+// getFullPost(id: number): Observable<Post> {
+  //   return this.http.get<PostDetail>(`${this.baseUrl}/${id}`).pipe(
+  //     map(detail => ({
+  //       ...detail,
+  //       excerpt: detail.content.slice(0, 150),
+  //       longContent: true,
+  //     }))
+  //   );
+  // }
+
+
+  // this.postService.getPostDetail(postId).subscribe(updatedPost => {
+        //   const detail
+        //   this.post = updatedPost; // Update this component's @Input post
+        //   this.checkPermissions(); // Re-check permissions
+        // });

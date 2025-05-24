@@ -23,6 +23,10 @@ export interface PostDetail {
     content: string;
     created_at: string;
     countLikes: number;
+    isLiked?: boolean;
+    countComments?: number;
+
+
 }
 
 export interface PostEditCreate {

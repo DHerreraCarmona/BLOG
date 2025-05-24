@@ -109,7 +109,7 @@
         
         <div *ngIf="isAuth" class="mt-6">
             <h3 class="text-lg font-semibold mb-2">Leave a Comment</h3>
-            <form class="space-y-4" [formGroup]="form">
+            <form class="space-y-4" [formGroup]="commentForm">
                 <textarea formControlName="content"
                           class="w-full p-3 bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 dark:focus:ring-green-400"
                           placeholder="Write your comment here" required></textarea>
@@ -118,7 +118,7 @@
                             class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-400">
                         Submit
                     </button>
-                    <button type="button" (click)="this.form.reset();"
+                    <button type="button" (click)="this.commentForm.reset();"
                             class="ml-2 px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-400">
                         Cancel
                     </button>

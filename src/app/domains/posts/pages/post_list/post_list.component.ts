@@ -104,23 +104,59 @@ export class PostListComponent {
     }
   }
 
-  onPostLiked(postId: number) {
-    if (this.userLikes.includes(postId)) {
-      this.userLikes = this.userLikes.filter(id => id !== postId);
-      return
+  onPostLiked(data: { id: number, isLiked: boolean, countLikes: number }) {
+    console.log('liked llega a list');
+    
+    const userString = localStorage.getItem('currentUser');
+    const currentUser = userString ? JSON.parse(userString) : null;
+  
+    const post = this.posts.find(p => p.id === data.id);
+    if (!post || !currentUser) return;
+  
+    post.isLiked = data.isLiked;
+    post.countLikes = data.countLikes;
+  
+    if (data.isLiked) {
+      if (!this.userLikes.includes(data.id)) {
+        this.userLikes.push(data.id);
+      }
+    } else {
+      this.userLikes = this.userLikes.filter(id => id !== data.id);
     }
-    this.userLikes.push(postId)
   }
+  
 
   onPostDeleted(postId: number) {
     if(this.pagination && this.pagination.total_count%10 == 1){
-      this.pagination.total_count -= 1;
       this.pagination.total_pages -= 1;
     }
     if(this.pagination && this.pagination.current_page >1){
       location.reload();
       return;
     }
+    if (this.pagination) {this.pagination.total_count -= 1;}
     this.posts = this.posts.filter(post => post.id !== postId);
+  }
+  
+  onPostEdit(){
+    const userString = localStorage.getItem("currentUser");
+    if(userString){ 
+      this.postService.getAllPosts(this.pagination?.current_page).subscribe(response => {
+        this.pagination = response.pagination;
+        this.posts = this.mapPostsForAuthenticated(response.results, JSON.parse(userString), this.userLikes)
+        return;
+      });
+    }
+  }
+
+  onPostCreate(){
+    const userString = localStorage.getItem("currentUser");
+    if(userString){ 
+      this.postService.getAllPosts(this.pagination?.current_page).subscribe(response => {
+        this.pagination = response.pagination;
+        this.posts = this.mapPostsForAuthenticated(response.results, JSON.parse(userString), this.userLikes)
+        return;
+      });
+    }
   }
 }

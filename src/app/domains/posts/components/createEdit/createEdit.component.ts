@@ -1,11 +1,11 @@
-import { tap } from 'rxjs';
 import { Router } from '@angular/router';
+import { Dialog} from '@angular/cdk/dialog';
 import { CommonModule } from '@angular/common';
 import { Component, Inject,ChangeDetectorRef, EventEmitter, Output } from '@angular/core';
 import { DialogRef,DIALOG_DATA } from '@angular/cdk/dialog';
 
 
-import { Post, PostEditCreate } from '@shared/models/post';
+import { Post, PostDetail, PostEditCreate } from '@shared/models/post';
 import { PostService } from '@shared/services/post.service';
 import { FormsModule } from '@angular/forms';
 
@@ -16,7 +16,11 @@ import { FormsModule } from '@angular/forms';
   templateUrl: './createEdit.component.html',
 })
 export class CreateEditComponent {
-  @Output() postCreateOrEdit = new EventEmitter<[number,string]>();
+  @Output() postCreated = new EventEmitter();
+  @Output() postLiked = new EventEmitter<number>();
+  @Output() postEdited = new EventEmitter<number>();
+  @Output() postDeleted = new EventEmitter<number>();
+  @Output() commentCreated = new EventEmitter<number>();
 
   postId!: number;
   post!: PostEditCreate;
@@ -32,6 +36,7 @@ export class CreateEditComponent {
   accessLabels = ['Public', 'Authenticated', 'Team', 'Owner'];
 
   constructor(
+    private dialog: Dialog,
     private router: Router,
     private postService: PostService,
     private dialogRef: DialogRef<PostEditCreate>,
@@ -60,36 +65,25 @@ export class CreateEditComponent {
     
     [this.post.public,this.post.authenticated,this.post.team,this.post.owner]= this.postAccess;
     
-    if(this.isCreate){
-      this.postService.createPost(this.post).subscribe({
-        next: (response) => {
-          console.log("Post created successfully:", response);
-          this.dialogRef.close(response);
-          this.router.navigate(['/post']);
-          this.postCreateOrEdit.emit([this.post.id,'create']);
-          
-        },
-        error: (error) => {
-          console.error("Error creating post:", error);
-          alert("An error occurred while updating the post. Please try again.");
-        }
-      });
-      return;
-    }
-    
-    this.postService.postEditPost(this.post).subscribe({
-      next: (response) => {
-        console.log("Post updated successfully:", response);
-        this.dialogRef.close(response);
-        this.router.navigate(['/post']);
-        this.postCreateOrEdit.emit([this.post.id,'edit']);
+    const action: 'create' | 'edit' = this.isCreate ? 'create' : 'edit';
 
-      },
-      error: (error) => {
-        console.error("Error updating post:", error);
-        alert("An error occurred while updating the post. Please try again.");
-      }
-    });
+    const callback = (response: PostEditCreate) => {
+      console.log(`Post ${action}d successfully:`, response);
+      this.dialogRef.close(this.post);
+    };
+
+    const errorCallback = (error: any) => {
+      console.error(`Error ${action}ing post:`, error);
+      alert(`An error occurred while ${action}ing the post. Please try again.`);
+    };
+    
+    if (this.isCreate) {
+      this.postService.createPost(this.post).subscribe({ next: callback, error: errorCallback });
+      this.postCreated.emit();
+    } else {
+      this.postService.postEditPost(this.post).subscribe({ next: callback, error: errorCallback });
+      this.postEdited.emit(this.post.id);
+    }
   }
 
   getOptionsForLevel(index: number) {
@@ -129,6 +123,6 @@ export class CreateEditComponent {
   }
 
   close(){
-    this.dialogRef.close(); 
+    this.dialogRef.close(this.post); 
   }  
 }

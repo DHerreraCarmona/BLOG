@@ -7,8 +7,9 @@
     <app-post 
         *ngFor="let post of posts"
         [post]="post"
-        (postDeleted)="onPostDeleted($event)"
         (postLiked)="onPostLiked($event)"
+        (postDeleted)="onPostDeleted($event)"
+        (postEdited)="onPostEdit()"
     >
     </app-post>
 </div>

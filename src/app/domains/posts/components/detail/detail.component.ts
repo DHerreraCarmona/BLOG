@@ -6,7 +6,7 @@ import {  Component,  Inject,  EventEmitter,  Input,  Output,  ViewContainerRef}
 
 import { AuthorPost, AuthorShort } from '@shared/models/author';
 import { Like } from '@shared/models/like';
-import { Post, PostDetail } from '@shared/models/post';
+import { Post, PostDetail, PostEditCreate } from '@shared/models/post';
 import { PostService } from '@shared/services/post.service';
 import { AuthService } from '@shared/services/auth.service';
 import { combineLatest, Subscription, tap } from 'rxjs';
@@ -34,9 +34,12 @@ import { CreateEditComponent } from '../createEdit/createEdit.component';
   templateUrl: './detail.component.html',
 })
 export class DetailComponent {
-  @Output() postLiked = new EventEmitter<number>();
-  @Output() commentCreated = new EventEmitter<number>();
+  @Output() postLiked = new EventEmitter<{id:number,isLiked:boolean,countLikes:number}>();
+  @Output() postEdited = new EventEmitter<number>();
   @Output() postDeleted = new EventEmitter<number>();
+  @Output() commentCreated = new EventEmitter<number>();
+  @Output() ready = new EventEmitter<DetailComponent>();
+
 
   post!: Post;
   content!: string;
@@ -44,13 +47,15 @@ export class DetailComponent {
   comments: Comment[] = [];
   isAuth = false;
   user: AuthorShort = { username: '' };
+  currentUserId: number = -1;
+  isOwner = false;
   isOwnerOrTeamEdit = false;
 
   isDeleteViewOpen = false;
   isLikesOverlayOpen: boolean = false;
-  form;
+  commentForm;
   newComment!: createCommentModel;
-  private authSubscription?: Subscription;
+  private authSubscription!: Subscription;
   private overlayRef: OverlayRef | null = null;
 
   likesLoaded: boolean = false;
@@ -58,7 +63,6 @@ export class DetailComponent {
   commentsPag!: Pagination | null;
 
   constructor(
-    private router: Router,
     private dialog: Dialog,
     private formBuilder: FormBuilder,
     private authService: AuthService,
@@ -68,43 +72,47 @@ export class DetailComponent {
     private dialogRef: DialogRef<PostDetail>,
     @Inject(DIALOG_DATA) private data: { post: Post }
   ) {
-    this.form = this.formBuilder.nonNullable.group({
+    this.commentForm = this.formBuilder.nonNullable.group({
       content: ['', Validators.required],
     });
+
     this.post = data.post;
 
-    this.likeService.getLikes(this.post.id).subscribe((response) => {
-      this.likes = Array.isArray(response.results) ? response.results : [];
-    });
-
-    this.getComments();
+    // this.likeService.getLikes(this.post.id).subscribe((response) => {
+    //   this.likes = Array.isArray(response.results) ? response.results : [];
+    // });
   }
 
   ngOnInit(): void {
-    if (!this.post.longContent) {
-      this.content = this.post.excerpt;
-    } else {
-      this.postService.getPostDetail(this.post.id).subscribe({
-        next: (data) => {
-          this.content = data.content;
-        },
-        error: (error) => {
-          console.error('Error fetching post detail:', error);
-        },
-      });
-    }
+    this.getPostDetail();
+    this.getPostLikes();
+    this.getComments();
 
     this.authSubscription = combineLatest([
       this.authService.authStatus$,
-      this.authService.currentUser$,
-    ])
-      .pipe(
-        tap(([isAuth, user]) => {
-          this.isAuth = isAuth;
-          this.user = user ? { username: user.username } : { username: '' };
-        })
-      )
-      .subscribe();
+      this.authService.currentUser$
+    ]).pipe(
+      tap(([isAuth, user]) => {
+        this.isAuth = isAuth;
+        this.user = user ? { username: user.username } : { username: '' };
+      })
+    ).subscribe();
+  }
+
+  afterViewInit() {
+    this.ready.emit(this);
+  }
+
+  getPostDetail(): void {
+    this.postService.getPostDetail(this.post.id).subscribe({
+      next: (detail) => {
+        this.content = detail.content;
+        this.post.title = detail.title;
+        this.post.countLikes = detail.countLikes;
+        this.post.created_at = detail.created_at;
+      },
+      error: (err) => console.error('Error fetching post detail:', err)
+    });
   }
 
   deletePost() {
@@ -134,20 +142,31 @@ export class DetailComponent {
     });
   }
 
+  getPostLikes(targetPage: number = 1) {
+    if (this.likesLoaded) return;
+
+    this.likesLoaded = true;
+    this.likeService
+      .getLikes(this.post.id, targetPage)
+      .subscribe((response) => {
+        this.likes = Array.isArray(response.results) ? response.results : [];
+        this.likesPag = response.pagination;
+      });
+  }
+  
   postComment() {
-    if (this.form.invalid) {
+    if (this.commentForm.invalid) {
       return;
     }
 
     this.newComment = {
       author: this.user,
-      content: this.form.getRawValue().content,
+      content: this.commentForm.getRawValue().content,
     } as createCommentModel;
 
     this.commentService.postComment(this.post.id, this.newComment).subscribe({
       next: (comment) => {
-        // this.resetForm();
-        this.form.reset();
+        this.commentForm.reset();
         this.commentCreated.emit(this.post.id);
 
         if (this.commentsPag && this.comments.length >= 5) {
@@ -163,27 +182,6 @@ export class DetailComponent {
     });
   }
 
-  getPostLikes(targetPage: number = 1) {
-    if (this.likesLoaded) return;
-
-    this.likesLoaded = true;
-    this.likeService
-      .getLikes(this.post.id, targetPage)
-      .subscribe((response) => {
-        this.likes = Array.isArray(response.results) ? response.results : [];
-        this.likesPag = response.pagination;
-      });
-  }
-
-  likesPagination(targetPage: number) {
-    this.likeService
-      .getLikes(this.post.id, targetPage)
-      .subscribe((response) => {
-        this.likes = Array.isArray(response.results) ? response.results : [];
-        this.likesPag = response.pagination;
-    });
-  }
-
   giveLike() {
     if (!this.isAuth) return;
 
@@ -191,7 +189,11 @@ export class DetailComponent {
       next: () => {
         this.post.isLiked = !this.post.isLiked;
         this.post.countLikes += this.post.isLiked ? 1 : -1;
-        this.postLiked.emit(this.post.id);
+        this.postLiked.emit({ 
+          id: this.post.id, 
+          isLiked: this.post.isLiked, 
+          countLikes: this.post.countLikes 
+        });
 
         if (this.post.isLiked) {
           if (this.likesPag && this.likes.length >= 15) {
@@ -224,16 +226,30 @@ export class DetailComponent {
     });
   }
 
-  openEditModal() {
-    this.dialog.open(CreateEditComponent, {
+  openEditModal(): void {
+    const dialogEditRef = this.dialog.open(CreateEditComponent, {
       minWidth: '75%',
       maxWidth: '100%',
-      data: {
-        postId: this.post.id,
-        isCreate: false,
-      },
-      panelClass: 'Edit-dialog-panel',
+      data: { postId: this.post.id, isCreate: false },
+      panelClass: 'Edit-dialog-panel'
     });
+
+    dialogEditRef.closed.subscribe((result) => {
+      const updatedPost = result as PostEditCreate;
+      this.postEdited.emit(updatedPost.id);
+    
+      if (updatedPost && typeof updatedPost === 'object' && 'id' in updatedPost) {
+        this.getPostDetail();
+      }
+      dialogEditRef.close();
+      this.dialogRef.close();
+
+    });
+  }
+
+  checkPermissions(): void {
+    this.isOwner = this.post.author.id === this.currentUserId;
+    this.isOwnerOrTeamEdit = this.isOwner || this.post.author.team === this.authService.getUser().team;
   }
 
   toggleLikesOverlay(event: MouseEvent) {
@@ -245,6 +261,15 @@ export class DetailComponent {
       this.clearCloseTimeout();
     }
     event.stopPropagation();
+  }
+
+  likesPagination(targetPage: number) {
+    this.likeService
+      .getLikes(this.post.id, targetPage)
+      .subscribe((response) => {
+        this.likes = Array.isArray(response.results) ? response.results : [];
+        this.likesPag = response.pagination;
+    });
   }
 
   closeTimeoutId: any;
@@ -276,3 +301,4 @@ export class DetailComponent {
     }
   }
 }
+

@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, EventEmitter, Output, ViewChild } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { Dialog} from '@angular/cdk/dialog';
 
@@ -16,6 +16,8 @@ import { Observable } from 'rxjs';
   templateUrl: './layout.component.html',
 })
 export class LayoutComponent {
+  @ViewChild(PostListComponent) postListComponent!: PostListComponent;
+
 
   isAuth$: Observable<boolean>;
 
@@ -27,7 +29,7 @@ export class LayoutComponent {
   }
 
   openCreateModal(){
-    this.dialog.open(CreateEditComponent,
+    const dialogDetailRef = this.dialog.open(CreateEditComponent,
       { minWidth: '75%',
         maxWidth: '75%',
         data:{
@@ -35,5 +37,10 @@ export class LayoutComponent {
         }
       } 
     );
+    if(dialogDetailRef.componentInstance ){
+      dialogDetailRef.componentInstance.postCreated.subscribe(_=>{
+        this.postListComponent.onPostCreate();
+      })
+    }
   }
 }
