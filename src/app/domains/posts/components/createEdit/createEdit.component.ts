@@ -68,22 +68,25 @@ export class CreateEditComponent {
     const action: 'create' | 'edit' = this.isCreate ? 'create' : 'edit';
 
     const callback = (response: PostEditCreate) => {
-      console.log(`Post ${action}d successfully:`, response);
-      this.dialogRef.close(this.post);
+      console.log(`Post ${action}d successfully`);
+      // this.dialogRef.close(this.post);
     };
 
     const errorCallback = (error: any) => {
       console.error(`Error ${action}ing post:`, error);
+      
       alert(`An error occurred while ${action}ing the post. Please try again.`);
     };
     
     if (this.isCreate) {
       this.postService.createPost(this.post).subscribe({ next: callback, error: errorCallback });
       this.postCreated.emit();
+
     } else {
       this.postService.postEditPost(this.post).subscribe({ next: callback, error: errorCallback });
       this.postEdited.emit(this.post.id);
     }
+    this.close();
   }
 
   getOptionsForLevel(index: number) {

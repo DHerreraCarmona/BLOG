@@ -34,12 +34,12 @@ import { CreateEditComponent } from '../createEdit/createEdit.component';
   templateUrl: './detail.component.html',
 })
 export class DetailComponent {
-  @Output() postLiked = new EventEmitter<{id:number,isLiked:boolean,countLikes:number}>();
   @Output() postEdited = new EventEmitter<number>();
   @Output() postDeleted = new EventEmitter<number>();
   @Output() commentCreated = new EventEmitter<number>();
   @Output() ready = new EventEmitter<DetailComponent>();
-
+  @Output() likeClicked = new EventEmitter<void>();
+  @Output() postLiked = new EventEmitter<{id:number,isLiked:boolean,countLikes:number}>();
 
   post!: Post;
   content!: string;
@@ -69,7 +69,7 @@ export class DetailComponent {
     private postService: PostService,
     private likeService: LikeService,
     private commentService: CommentService,
-    private dialogRef: DialogRef<PostDetail>,
+    private dialogRef: DialogRef<Post>,
     @Inject(DIALOG_DATA) private data: { post: Post }
   ) {
     this.commentForm = this.formBuilder.nonNullable.group({
@@ -185,65 +185,39 @@ export class DetailComponent {
   giveLike() {
     if (!this.isAuth) return;
 
-    this.likeService.giveLike(this.post.id).subscribe({
-      next: () => {
-        this.post.isLiked = !this.post.isLiked;
-        this.post.countLikes += this.post.isLiked ? 1 : -1;
-        this.postLiked.emit({ 
-          id: this.post.id, 
-          isLiked: this.post.isLiked, 
-          countLikes: this.post.countLikes 
-        });
+    // this.post.isLiked = !this.post.isLiked;
+    // this.post.countLikes += this.post.isLiked ? 1 : -1;
+    // this.postLiked.emit({
+    //   id: this.post.id,
+    //   isLiked: this.post.isLiked,
+    //   countLikes: this.post.countLikes,
+    // });
 
-        if (this.post.isLiked) {
-          if (this.likesPag && this.likes.length >= 15) {
-            this.likesLoaded = false;
-            this.getPostLikes();
-          } else {
-            this.likes.push({
-              post: { id: this.post.id, title: this.post.title },
-              author: { username: this.authService.getUser().username },
-            });
-          }
-        } else {
-          if (
-            this.likesPag &&
-            this.likes.length == 1 &&
-            this.likesPag.current_page > 1
-          ) {
-            this.likesLoaded = false;
-            this.getPostLikes(this.likesPag.current_page - 1);
-          } else {
-            this.likes = this.likes.filter(
-              (like) => like.author.username != this.user.username
-            );
-          }
-        }
-      },
-      error(err) {
-        console.error('Giving like/dislike error', err);
-      },
-    });
+    this.likeClicked.emit();
   }
 
-  openEditModal(): void {
-    const dialogEditRef = this.dialog.open(CreateEditComponent, {
+  openEditModal() {
+    const dialogRef = this.dialog.open(CreateEditComponent, {
       minWidth: '75%',
       maxWidth: '100%',
       data: { postId: this.post.id, isCreate: false },
       panelClass: 'Edit-dialog-panel'
     });
 
-    dialogEditRef.closed.subscribe((result) => {
+    dialogRef.closed.subscribe((result) => {
       const updatedPost = result as PostEditCreate;
-      this.postEdited.emit(updatedPost.id);
-    
+      
       if (updatedPost && typeof updatedPost === 'object' && 'id' in updatedPost) {
-        this.getPostDetail();
-      }
-      dialogEditRef.close();
-      this.dialogRef.close();
+        this.post.title = updatedPost.title;
+        this.post.excerpt = updatedPost.content;
 
+        console.log(this.post);
+        this.postLiked.emit({
+          id: this.post.id,
+          isLiked: this.post.isLiked,
+          countLikes: this.post.countLikes
+        });
+      }
     });
   }
 
@@ -289,7 +263,7 @@ export class DetailComponent {
   }
 
   close() {
-    this.dialogRef.close();
+    this.dialogRef.close(this.post);
   }
 
   ngOnDestroy(): void {
@@ -302,3 +276,46 @@ export class DetailComponent {
   }
 }
 
+// giveLike() {
+  //   if (!this.isAuth) return;
+
+  //   this.likeService.giveLike(this.post.id).subscribe({
+  //     next: () => {
+  //       this.post.isLiked = !this.post.isLiked;
+  //       this.post.countLikes += this.post.isLiked ? 1 : -1;
+  //       this.postLiked.emit({ 
+  //         id: this.post.id, 
+  //         isLiked: this.post.isLiked, 
+  //         countLikes: this.post.countLikes 
+  //       });
+
+  //       if (this.post.isLiked) {
+  //         if (this.likesPag && this.likes.length >= 15) {
+  //           this.likesLoaded = false;
+  //           this.getPostLikes();
+  //         } else {
+  //           this.likes.push({
+  //             post: { id: this.post.id, title: this.post.title },
+  //             author: { username: this.authService.getUser().username },
+  //           });
+  //         }
+  //       } else {
+  //         if (
+  //           this.likesPag &&
+  //           this.likes.length == 1 &&
+  //           this.likesPag.current_page > 1
+  //         ) {
+  //           this.likesLoaded = false;
+  //           this.getPostLikes(this.likesPag.current_page - 1);
+  //         } else {
+  //           this.likes = this.likes.filter(
+  //             (like) => like.author.username != this.user.username
+  //           );
+  //         }
+  //       }
+  //     },
+  //     error(err) {
+  //       console.error('Giving like/dislike error', err);
+  //     },
+  //   });
+  // }

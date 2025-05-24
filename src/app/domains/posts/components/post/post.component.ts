@@ -4,7 +4,7 @@ import { OverlayModule} from '@angular/cdk/overlay';
 import { Dialog, DialogRef} from '@angular/cdk/dialog';
 import { Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
 
-import { Post, PostDetail } from '@shared/models/post';
+import { Post, PostDetail, PostEditCreate } from '@shared/models/post';
 import { Like } from '@shared/models/like';
 import { AuthorPost } from '@shared/models/author';
 import { AuthService } from '@shared/services/auth.service';
@@ -156,98 +156,150 @@ export class PostComponent implements OnInit, OnDestroy {
     event.stopPropagation();
   }
 
+  // openEditModal() {
+  //   const dialogEditRef = this.dialog.open(CreateEditComponent, {
+  //     minWidth: '75%',
+  //     maxWidth: '100%',
+  //     data: {
+  //       postId: this.post.id,
+  //       isCreate: false,
+  //     },
+  //     panelClass: 'Edit-dialog-panel',
+  //   });
+  //   if (dialogEditRef && dialogEditRef.componentInstance) {
+  //     dialogEditRef.componentInstance.postEdited.subscribe(postId=> {
+  //       this.onPostUpdated(postId);
+  //       this.postEdited.emit(postId);
+  //     });
+  //   }
+  // }
   openEditModal() {
-    const dialogEditRef = this.dialog.open(CreateEditComponent, {
+    const dialogRef = this.dialog.open(CreateEditComponent, {
       minWidth: '75%',
       maxWidth: '100%',
-      data: {
-        postId: this.post.id,
-        isCreate: false,
-      },
-      panelClass: 'Edit-dialog-panel',
+      data: { postId: this.post.id, isCreate: false },
+      panelClass: 'Edit-dialog-panel'
     });
-    if (dialogEditRef && dialogEditRef.componentInstance) {
-      dialogEditRef.componentInstance.postEdited.subscribe(postId=> {
-        this.postEdited.emit(postId);
-        this.onPostUpdated(postId);
-      });
-    }
-  }
 
-  onPostUpdated(postId: number) {
-    this.postService.getPostDetail(postId).subscribe(postDetail => {
-      const dialogRef = this.dialog.open(DetailComponent, {
-        minWidth: '75%',
-        maxWidth: '100%',
-        autoFocus: false,
-        data: { post: { ...this.post, ...postDetail, longContent: true } },
-        panelClass: 'detail-dialog-panel',
-      });
-  
-      // ⬅️ Usa afterClosed como punto seguro
-      dialogRef.closed.subscribe((result) => {
-        const data = result as { liked?: boolean; countLikes?: number; commentsCount?: number };
-
-        if (data?.liked !== undefined && data.countLikes !== undefined) {
-          this.post.isLiked = data.liked;
-          this.post.countLikes = data.countLikes;
-          this.postLiked.emit({
-            id: this.post.id,
-            isLiked: data.liked,
-            countLikes: data.countLikes
-          });
-        }
-
-        if (data?.commentsCount !== undefined) {
-          this.post.countComments = data.commentsCount;
-        }
-      });
+    dialogRef.closed.subscribe((result) => {
+      const updatedPost = result as PostEditCreate;
+      
+      if (updatedPost && typeof updatedPost === 'object' && 'id' in updatedPost) {
+        this.post.excerpt = updatedPost.content;
+        // console.log(this.post);
+        // this.postLiked.emit({
+        //   id: updatedPost.id,
+        //   isLiked: updatedPost.isLiked,
+        //   countLikes: updatedPost.countLikes
+        // });
+        this.openDetailModal(true)
+      }
     });
   }
 
-  openDetailModal() {
-    const dialogDetailRef = this.dialog.open(DetailComponent, {
+  openDetailModal(fromUpdate = false) {
+    const dialogRef = this.dialog.open(DetailComponent, {
       minWidth: '75%',
       maxWidth: '100%',
       autoFocus: false,
-      data: {
-        post: this.post,
-      },
+      data: { post: this.post },
       panelClass: 'detail-dialog-panel',
     });
-    if (!dialogDetailRef || !dialogDetailRef.componentInstance) { return; }
 
-    dialogDetailRef.componentInstance.postEdited.subscribe(postId=> {
-      this.postEdited.emit(postId);
-      this.onPostUpdated(postId)        
-    });
-    
-    dialogDetailRef.componentInstance.postDeleted.subscribe((deletedPostId: number) => {
-      if (deletedPostId === this.post.id) {
-        this.postDeleted.emit(deletedPostId);
-      }
-    });
+    const sub = setInterval(() => {
+      if (dialogRef.componentInstance) {
+        clearInterval(sub);
 
-    dialogDetailRef.componentInstance.commentCreated.subscribe((postId: number) => {
-      if (postId === this.post.id) {
-        this.post.countComments++;
-      }
-    });
+        dialogRef.componentInstance.postEdited.subscribe(postId => {
+          this.postEdited.emit(postId);
+          this.openEditModal();
+        });
 
-    dialogDetailRef.componentInstance.postLiked.subscribe((data) => {
-      console.log('like from normal detail');
+        dialogRef.componentInstance.postDeleted.subscribe(deletedPostId => {
+          this.postDeleted.emit(deletedPostId);
+        });
 
-      if (data.id === this.post.id) {
-        this.post.isLiked = data.isLiked;
-        this.post.countLikes = data.countLikes;
-        this.postLiked.emit({ 
-          id: this.post.id, 
-          isLiked: this.post.isLiked, 
-          countLikes: this.post.countLikes 
+        dialogRef.componentInstance.commentCreated.subscribe(postId => {
+          if (postId === this.post.id) {
+            this.post.countComments++;
+            this.commentCountUpdated.emit({ id: postId, count: this.post.countComments });
+          }
+        });
+
+        dialogRef.componentInstance.likeClicked.subscribe(() => {
+          this.giveLike();
         });
       }
-    });
+    }, 50);
   }
+
+  // onPostUpdated(postId: number) {
+  //   this.postService.getPostDetail(postId).subscribe(postDetail => {
+  //     const dialogRef = this.dialog.open(DetailComponent, {
+  //       minWidth: '75%',
+  //       maxWidth: '100%',
+  //       autoFocus: false,
+  //       data: { post: { ...this.post, ...postDetail, longContent: true } },
+  //       panelClass: 'detail-dialog-panel',
+  //     });
+
+  //     if (!dialogRef || !dialogRef.componentInstance) return;
+
+  //     dialogRef.componentInstance.postEdited.subscribe(postId => {
+  //       this.postEdited.emit(postId);
+  //       this.onPostUpdated(postId);
+  //     });
+
+  //     dialogRef.componentInstance.postDeleted.subscribe(deletedPostId => {
+  //       this.postDeleted.emit(deletedPostId);
+  //     });
+
+  //     dialogRef.componentInstance.commentCreated.subscribe(postId => {
+  //       if (postId === this.post.id) {
+  //         this.post.countComments++;
+  //         this.commentCountUpdated.emit({ id: postId, count: this.post.countComments });
+  //       }
+  //     });
+
+  //     dialogRef.componentInstance.likeClicked.subscribe(() => {
+  //       this.giveLike();
+  //     });
+  //   });
+  // }
+
+  // openDetailModal() {
+  //   const dialogDetailRef = this.dialog.open(DetailComponent, {
+  //     minWidth: '75%',
+  //     maxWidth: '100%',
+  //     autoFocus: false,
+  //     data: {
+  //       post: this.post,
+  //     },
+  //     panelClass: 'detail-dialog-panel',
+  //   });
+  //   if (!dialogDetailRef || !dialogDetailRef.componentInstance) { return; }
+
+  //   dialogDetailRef.componentInstance.postEdited.subscribe(postId=> {
+  //     this.postEdited.emit(postId);
+  //     this.onPostUpdated(postId)        
+  //   });
+    
+  //   dialogDetailRef.componentInstance.postDeleted.subscribe((deletedPostId: number) => {
+  //     if (deletedPostId === this.post.id) {
+  //       this.postDeleted.emit(deletedPostId);
+  //     }
+  //   });
+
+  //   dialogDetailRef.componentInstance.commentCreated.subscribe((postId: number) => {
+  //     if (postId === this.post.id) {
+  //       this.post.countComments++;
+  //     }
+  //   });
+
+  //   dialogDetailRef.componentInstance.likeClicked.subscribe(() => {
+  //     this.giveLike();
+  //   });
+  // }
 
   closeTimeoutId: any;
   readonly closeDelay = 50;

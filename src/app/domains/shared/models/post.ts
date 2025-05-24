@@ -13,7 +13,7 @@ export interface Post {
     teamEdit: boolean;
     longContent?: boolean;
     isOwnerOrTeamEdit?: boolean;
-    isLiked?: boolean;
+    isLiked: boolean;
 }
 
 export interface PostDetail {
@@ -25,8 +25,6 @@ export interface PostDetail {
     countLikes: number;
     isLiked?: boolean;
     countComments?: number;
-
-
 }
 
 export interface PostEditCreate {
