@@ -97,8 +97,6 @@ export class AuthService {
         this.clearAuthData();
       }),
       catchError((error) => {
-        // this.clearAuthData();
-        // return of(null);
         return throwError(() => error);
       })
     );

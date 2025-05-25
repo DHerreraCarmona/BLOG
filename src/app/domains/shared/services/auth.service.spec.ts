@@ -129,7 +129,6 @@ describe('AuthService', () => {
     service.logout().subscribe((response) => {
       expect(response).toBeNull();
       expect(service.isAuthenticated).toBeFalse();
-      expect(console.log).toHaveBeenCalledWith('Logout successful');
     });
 
     const req = httpMock.expectOne(`${environment.API_URL}logout/`);

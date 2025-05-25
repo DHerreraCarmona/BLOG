@@ -1,16 +1,37 @@
-import { TestBed } from '@angular/core/testing';
+import { NotificationService } from './notifications.service';
 
-import { NotificationsService } from '@shared/notifications/notifications.service';
-
-describe('NotificationsService', () => {
-  let service: NotificationsService;
+describe('NotificationService', () => {
+  let service: NotificationService;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({});
-    service = TestBed.inject(NotificationsService);
+    service = new NotificationService();
   });
 
-  it('should be created', () => {
+  it('should create the service', () => {
     expect(service).toBeTruthy();
   });
+
+  it('should emit a success notification', (done) => {
+    service.show('Success!', 'success');
+
+    service.notification$.subscribe((notif) => {
+      if (notif) {
+        expect(notif).toEqual({ message: 'Success!', type: 'success' });
+        done();
+      }
+    });
+  });
+
+  it('should emit an error notification', (done) => {
+    service.show('Error occurred', 'error');
+
+    service.notification$.subscribe((notif) => {
+      if (notif) {
+        expect(notif).toEqual({ message: 'Error occurred', type: 'error' });
+        done();
+      }
+    });
+  });
+
+  
 });

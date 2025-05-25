@@ -105,7 +105,6 @@ describe('RegisterComponent', () => {
     );
 
     component.onSubmit();
-
-    // expect(component.errorMessage).toBe('Email already exists');
+    // expect(component.no).toBe('Email already exists');
   });
 });

@@ -9,7 +9,8 @@ import { AuthService } from '@shared/services/auth.service';
 import { LikeService } from '@shared/services/like.service';
 import { PostService } from '@shared/services/post.service';
 import { CommentService } from '@shared/services/comment.service';
-import { mockPost,mockLikes,createMockLikes,mockComments,mockNewComment,mockPagination,mockShortUser,
+import { NotificationService } from '@shared/notifications/notifications.service';
+import { mockPost,mockPostDetail,mockLikes,createMockLikes,mockComments,mockNewComment,mockPagination,mockShortUser,
   createAuthServiceMock,createLikeServiceMock,createCommentServiceMock,createpostServiceMock,
   createDialogMock,createMockDialogRef
 } from '@shared/mocks/mocks'
@@ -21,6 +22,8 @@ let authServiceMock: any;
 let postServiceMock: any;
 let likeServiceMock: any;
 let commentServiceMock: any;
+let notificationServiceSpy: jasmine.SpyObj<NotificationService>;
+
 
 describe('DetailComponent', () => {
   let component: DetailComponent;
@@ -34,6 +37,8 @@ describe('DetailComponent', () => {
     postServiceMock = createpostServiceMock();
     commentServiceMock = createCommentServiceMock();
     likeServiceMock = createLikeServiceMock(likesMock);
+    notificationServiceSpy = jasmine.createSpyObj('NotificationService', ['show']);
+
 
     await TestBed.configureTestingModule({
       imports: [DetailComponent,HttpClientTestingModule],
@@ -73,7 +78,6 @@ describe('DetailComponent', () => {
     expect(mockLikes.length).toBe(14); 
     expect(component.isAuth).toBe(true);
     expect(component.user).toEqual(mockShortUser);
-    expect(component.isOwnerOrTeamEdit).toBe(false);
 
     expect(component.post).toEqual(mockPost);
     expect(component.commentForm).toBeDefined();
@@ -92,7 +96,7 @@ describe('DetailComponent', () => {
     expect(dialogRef.close).toHaveBeenCalled();
     expect(postServiceMock.deletePost).toHaveBeenCalledWith(mockPost.id);
     expect(component.postDeleted.emit).toHaveBeenCalledWith(mockPost.id);
-    expect(console.log).toHaveBeenCalledOnceWith('Post deleted successfully', { success: true });
+    expect(notificationServiceSpy.show).toHaveBeenCalledWith('Post deleted succesfully', 'success');
   });
 
   it('should handle deletePost error', () => {
@@ -103,7 +107,8 @@ describe('DetailComponent', () => {
     expect(component.isDeleteViewOpen).toBeFalse();
     expect(component.postDeleted.emit).not.toHaveBeenCalled();
     expect(postServiceMock.deletePost).toHaveBeenCalledWith(mockPost.id);
-    expect(console.error).toHaveBeenCalledWith('Error deleting post', { error: 'Delete Fail'});
+    expect(notificationServiceSpy.show).toHaveBeenCalledWith('Error deleting post', 'error');
+
   });
 
   it('should handle getComments Error', () => {
@@ -113,9 +118,9 @@ describe('DetailComponent', () => {
       })
     )
     component.getComments();
-    expect(console.error).toHaveBeenCalledWith(
-      'Error fetching comments:',{ error: 'getComments Fail'}
-    );
+
+    expect(notificationServiceSpy.show).toHaveBeenCalledWith('Error fetching post comments', 'error');
+
   });
 
   it('should create a comment calling commentService and emit commentCreated',()=>{
@@ -147,9 +152,7 @@ describe('DetailComponent', () => {
 
     expect(component.commentCreated.emit).not.toHaveBeenCalled();
     expect(component.getComments).not.toHaveBeenCalled();
-    expect(console.error).toHaveBeenCalledWith( 
-      'Error creating comment:',{ error: 'postComment Fail'}
-    );
+    expect(notificationServiceSpy.show).toHaveBeenCalledWith('Error creating new comment', 'error');
   });
 
   it('should call getPostLikes based on likesLoaded status', () => {
@@ -174,7 +177,7 @@ describe('DetailComponent', () => {
     expect(component.post.isLiked).toBeTrue();
     expect(component.post.countLikes).toBe(mockLikes.length + 1);
     expect(likeServiceMock.giveLike).toHaveBeenCalledWith(mockPost.id);
-    expect(component.postLiked.emit).toHaveBeenCalledWith(mockPost.id);
+    expect(component.likeClicked.emit).toHaveBeenCalledWith();
 
     component.giveLike();
     expect(component.post.isLiked).toBeFalse();

@@ -2,7 +2,7 @@ import { EventEmitter } from '@angular/core';
 import { Comment, createCommentModel } from '@shared/models/comment';
 import { Like } from '@shared/models/like';
 import { Pagination } from '@shared/models/pagination';
-import { Post, PostEditCreate } from '@shared/models/post';
+import { Post, PostDetail, PostEditCreate } from '@shared/models/post';
 import { BehaviorSubject, of } from 'rxjs';
 
 export const mockClick = new MouseEvent('click');
@@ -10,8 +10,6 @@ export const mockLeave = new MouseEvent('mouseleave');
 
 export const mockUser = { id: 1, username: 'testUser', team: 'None' };
 export const mockShortUser = { username: 'testUser' };
-
-
 
 export const mockPost: Post = {
   id: 1,
@@ -24,6 +22,17 @@ export const mockPost: Post = {
   countComments: 0,
   teamEdit: false,
 };
+
+export const mockPostDetail: PostDetail = {
+  id: 1,
+  author: { id: 1, username: 'testUser', team: 'None' },
+  title: 'Detail Test Post',
+  content: 'Detail Test Post contetn',
+  created_at: '',
+  countLikes: 0,
+  isLiked: false,
+  countComments: 0,
+}
 
 export const mockEditPost: PostEditCreate = {
   id: 1,
@@ -83,6 +92,7 @@ export function createAuthServiceMock() {
   return {
     authStatus$: authStatusSubject.asObservable(),
     currentUser$: currentUserSubject.asObservable(),
+    fetchCsrf: jasmine.createSpy().and.returnValue(of({})),
     getUser: jasmine.createSpy().and.returnValue({ username: 'testUser' }),
   };
 }
@@ -114,6 +124,7 @@ export function createpostServiceMock() {
     createPost: jasmine.createSpy().and.returnValue(of(mockEditPost)),
     getEditPost: jasmine.createSpy().and.returnValue(of(mockEditPost)),
     postEditPost: jasmine.createSpy().and.returnValue(of(mockEditPost)),
+    getPostDetail: jasmine.createSpy().and.returnValue(of(mockPostDetail)),
     deletePost: jasmine.createSpy().and.returnValue(of({ success: true })),
   };
 }
@@ -121,8 +132,19 @@ export function createpostServiceMock() {
 export function createMockDetailDialogRef() {
   return {
     componentInstance: {
-      commentCreated: new EventEmitter<number>(),
+      postEdited: new EventEmitter<number>(),
       postDeleted: new EventEmitter<number>(),
+      commentCreated: new EventEmitter<number>(),
+      likeClicked: new EventEmitter<void>(),
+    },
+  };
+}
+
+export function createMockEditDialogRef() {
+  return {
+    componentInstance: {
+      postEdited: new EventEmitter<number>(),
+      postCreated: new EventEmitter<number>(),
     },
   };
 }

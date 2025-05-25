@@ -124,6 +124,7 @@ const mockPosts: Post[] = [
     countComments: 5,
     countLikes: 10,
     teamEdit: false,
+    isLiked:false
   },
   {
     id: 2,
@@ -134,6 +135,7 @@ const mockPosts: Post[] = [
     countComments: 2,
     countLikes: 3,
     teamEdit: true,
+    isLiked:false
   },
 ];
 

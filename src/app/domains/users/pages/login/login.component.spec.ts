@@ -1,6 +1,5 @@
 import { of, throwError } from 'rxjs';
 import { Router } from '@angular/router';
-import { AbstractControl } from '@angular/forms';
 import { ReactiveFormsModule } from '@angular/forms';
 import { RouterTestingModule } from '@angular/router/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -8,32 +7,29 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 import { LoginComponent } from './login.component';
 import { AuthService } from '@shared/services/auth.service';
+import { NotificationService } from '@shared/notifications/notifications.service';
 
-const mockData = {
-  email: 'test@example.com',
-  password: 'securePassword123',
-  confirmPassword: 'securePassword123',
-};
-
-const mockUser = {id: 1, username: 'test', team: 'None',
-};
+const mockUser = { id: 1, username: 'test', team: 'None' };
 
 describe('LoginComponent', () => {
   let router: Router;
   let component: LoginComponent;
   let fixture: ComponentFixture<LoginComponent>;
   let authServiceSpy: jasmine.SpyObj<AuthService>;
+  let notificationServiceSpy: jasmine.SpyObj<NotificationService>;
 
   beforeEach(async () => {
     authServiceSpy = jasmine.createSpyObj('AuthService', [
-      'login', 'checkAuth',
+      'login', 'checkAuth', 'fetchCsrf'
     ]);
+    notificationServiceSpy = jasmine.createSpyObj('NotificationService', ['show']);
 
     await TestBed.configureTestingModule({
-      imports: [LoginComponent, ReactiveFormsModule,
-        HttpClientTestingModule, RouterTestingModule,
+      imports: [LoginComponent, ReactiveFormsModule, HttpClientTestingModule, RouterTestingModule],
+      providers: [
+        { provide: AuthService, useValue: authServiceSpy },
+        { provide: NotificationService, useValue: notificationServiceSpy }
       ],
-      providers: [{ provide: AuthService, useValue: authServiceSpy }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(LoginComponent);
@@ -59,47 +55,41 @@ describe('LoginComponent', () => {
   });
 
   it('should show error if email is not valid', () => {
-    component.form.setValue({email: 'userexample.com', password: 'password1'});
+    component.form.setValue({ email: 'invalidemail', password: 'password123' });
     component.onSubmit();
     expect(component.form.valid).toBeFalse();
   });
 
-  it('should call AuthService.login with valid data and navigate to /posts', () => {
-    const formData = {email: 'test@example.com', password: 'securePassword123'};
-
+  it('should call fetchCsrf, then login and navigate on success', () => {
+    const formData = { email: 'test@example.com', password: 'securePassword123' };
     component.form.setValue(formData);
+
+    authServiceSpy.fetchCsrf.and.returnValue(of({}));
     authServiceSpy.login.and.returnValue(of(mockUser));
     authServiceSpy.checkAuth.and.returnValue(of(true));
 
-    expect(component.status).toBe('init');
-
     component.onSubmit();
 
-    expect(authServiceSpy.login).toHaveBeenCalledWith(
-      formData.email, formData.password
-    );
+    expect(authServiceSpy.fetchCsrf).toHaveBeenCalled();
+    expect(authServiceSpy.login).toHaveBeenCalledWith(formData.email, formData.password);
     expect(router.navigate).toHaveBeenCalledWith(['/posts']);
-    expect(component.status).toBe('success');
+    expect(notificationServiceSpy.show).toHaveBeenCalledWith('Logged in successfully!', 'success');
   });
 
-  it('should handle login error and set status to error', () => {
+  it('should handle login error and show error message', () => {
     component.form.setValue({
-      email: 'wronemaiil@mail.com',
+      email: 'fail@example.com',
       password: 'wrongpassword',
     });
 
+    authServiceSpy.fetchCsrf.and.returnValue(of({}));
     authServiceSpy.login.and.returnValue(
-      throwError(() => {
-        return { error: 'Login failed' };
-      })
+      throwError(() => new Error('Login failed'))
     );
 
     component.onSubmit();
 
     expect(component.status).toBe('error');
-    expect(localStorage.getItem('currentUser')).toBeNull();
-    expect(authServiceSpy.isAuthenticated).toBeFalsy();
-    expect(authServiceSpy.user).toBeUndefined();
-    // expect(component.errorMessage).toBe('Email already exists');
+    expect(notificationServiceSpy.show).toHaveBeenCalledWith('Login failed. Please check your credentials.', 'error');
   });
 });

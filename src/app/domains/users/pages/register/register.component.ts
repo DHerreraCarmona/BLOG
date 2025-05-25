@@ -70,6 +70,7 @@ export class RegisterComponent {
         this.router.navigate(['/login'], { queryParams: { registered: true } });
       },
       error: (err) => {
+        this.notificationService.show('User registration fail', 'error');
         this.handleAuthError();
       },
     });

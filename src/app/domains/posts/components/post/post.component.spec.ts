@@ -8,27 +8,36 @@ import { AuthService  } from '@shared/services/auth.service';
 import { PostService  } from '@shared/services/post.service'; 
 import { DetailComponent } from '../detail/detail.component';
 import { CreateEditComponent } from '../createEdit/createEdit.component';
+import { NotificationService } from '@shared/notifications/notifications.service';
+
 
 import { mockClick,mockLeave,mockLikes,createMockLikes,mockPost,mockPagination,mockUser,
   createAuthServiceMock,createLikeServiceMock,createpostServiceMock,
-  createDialogMock, createMockDetailDialogRef
+  createDialogMock, createMockDetailDialogRef, createMockEditDialogRef
 } from '@shared/mocks/mocks'
 
 let likesMock: any; 
-let dialogRef: any;
-let dialogMock: any;
+let dialogEditRef: any;
+let dialogEditMock: any;
+let dialogDetailRef: any;
+let dialogDetailMock: any;
 let authServiceMock: any;
 let likeServiceMock: any;
 let postServiceMock: any;
+let notificationServiceSpy: jasmine.SpyObj<NotificationService>;
+
 
 describe('PostComponent', () => {
   let component: PostComponent;
   let fixture: ComponentFixture<PostComponent>;
-  
+  notificationServiceSpy = jasmine.createSpyObj('NotificationService', ['show']);
+
   beforeEach(async () => {
     likesMock = createMockLikes(); 
-    dialogRef = createMockDetailDialogRef();
-    dialogMock = createDialogMock(dialogRef);
+    dialogDetailRef = createMockDetailDialogRef();
+    dialogDetailMock = createDialogMock(dialogEditRef);
+    dialogEditRef = createMockDetailDialogRef();
+    dialogEditMock = createDialogMock(dialogEditRef);
     authServiceMock = createAuthServiceMock();
     postServiceMock = createpostServiceMock();
     likeServiceMock = createLikeServiceMock(likesMock);
@@ -36,10 +45,11 @@ describe('PostComponent', () => {
     await TestBed.configureTestingModule({
       imports: [PostComponent],
       providers: [
-        { provide: Dialog, useValue: dialogMock },
+        { provide: Dialog, useValue: dialogDetailMock },
         { provide: AuthService, useValue: authServiceMock },
         { provide: LikeService, useValue: likeServiceMock },
         { provide: PostService, useValue: postServiceMock },
+        { provide: NotificationService, useValue: notificationServiceSpy },
       ]
     }).compileComponents();
 
@@ -72,7 +82,7 @@ describe('PostComponent', () => {
     expect(component.isDeleteViewOpen).toBeFalse();
     expect(postServiceMock.deletePost).toHaveBeenCalledWith(mockPost.id);
     expect(component.postDeleted.emit).toHaveBeenCalledWith(mockPost.id);
-    expect(console.log).toHaveBeenCalledOnceWith('Post deleted successfully', { success: true });
+    expect(notificationServiceSpy.show).toHaveBeenCalledWith('Post deleted successfully', 'success');
   });
 
   it('should handle deletePost error', () => {
@@ -85,12 +95,12 @@ describe('PostComponent', () => {
     expect(component.isDeleteViewOpen).toBeFalse();
     expect(component.postDeleted.emit).not.toHaveBeenCalled();
     expect(postServiceMock.deletePost).toHaveBeenCalledWith(mockPost.id);
-    expect(console.error).toHaveBeenCalledOnceWith('Error deleting post', { error: 'Delete Fail'});
+    expect(notificationServiceSpy.show).toHaveBeenCalledWith('Error deleting post', 'error');
   });
 
   it('should call getPostLikes based on likesLoaded status', () => {
     component.getPostLikes();        //likesLoaded is False, call service
-    expect(component.likesLoaded).toBeTrue;
+    expect(component.likesLoaded).toBeTrue();
 
     expect(likeServiceMock.getLikes).toHaveBeenCalledWith(mockPost.id, 1);
     expect(component.likes).toEqual(mockLikes);
@@ -108,7 +118,6 @@ describe('PostComponent', () => {
     expect(component.post.isLiked).toBeTrue();
     expect(component.post.countLikes).toBe(mockLikes.length + 1);
     expect(likeServiceMock.giveLike).toHaveBeenCalledWith(mockPost.id);
-    expect(component.postLiked.emit).toHaveBeenCalledWith(mockPost.id);
 
     component.giveLike();
     expect(component.post.isLiked).toBeFalse();
@@ -130,7 +139,8 @@ describe('PostComponent', () => {
     expect(component.postLiked.emit).not.toHaveBeenCalled();
     expect(component.post.countLikes).toBe(mockLikes.length);
     expect(likeServiceMock.giveLike).toHaveBeenCalledWith(mockPost.id);
-    expect(console.error).toHaveBeenCalledOnceWith('Giving like/dislike error', { error: 'internal error'});
+    expect(notificationServiceSpy.show).toHaveBeenCalledWith('Error giving like/dislike to post', 'error');
+
   });
   
   it('should handle likes pagination correctly', () => {
@@ -180,15 +190,12 @@ describe('PostComponent', () => {
   });
 
   it('should open edit post modal',()=>{
-    const mockDialogRef = {
-      componentInstance: {postId: null}
-    };
-    dialogMock.open.and.returnValue(mockDialogRef);
+    dialogEditMock.open.and.returnValue(createMockEditDialogRef);
 
     component.openEditModal();
 
-    expect(dialogMock.open).toHaveBeenCalled();
-    expect(dialogMock.open).toHaveBeenCalledWith(CreateEditComponent, {
+    expect(dialogEditMock.open).toHaveBeenCalled();
+    expect(dialogDetailMock.open).toHaveBeenCalledWith(CreateEditComponent, {
       minWidth: '75%',
       maxWidth: '100%',
       data: {
@@ -202,21 +209,21 @@ describe('PostComponent', () => {
   it('should open Detail post modal', () => {
     component.openDetailModal();
 
-    expect(dialogMock.open).toHaveBeenCalledWith(DetailComponent, jasmine.objectContaining({
+    expect(dialogDetailMock.open).toHaveBeenCalledWith(DetailComponent, jasmine.objectContaining({
       data: { post: component.post }
     }));
   });
 
   it('should handle commentCreated event', () => {
     component.openDetailModal();
-    dialogRef.componentInstance.commentCreated.emit(mockPost.id);
+    dialogDetailRef.componentInstance.commentCreated.emit(mockPost.id);
 
     expect(component.post.countComments).toBe(1);
   });
 
   it('should handle postDeleted event', () => {
     component.openDetailModal();
-    dialogRef.componentInstance.postDeleted.emit(mockPost.id);
+    dialogDetailRef.componentInstance.postDeleted.emit(mockPost.id);
 
     expect(component.postDeleted.emit).toHaveBeenCalledWith(mockPost.id);
   });

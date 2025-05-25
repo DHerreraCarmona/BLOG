@@ -17,10 +17,10 @@ import { NotificationService } from '@shared/notifications/notifications.service
 })
 export class CreateEditComponent {
   @Output() postCreated = new EventEmitter();
-  @Output() postLiked = new EventEmitter<number>();
+  // @Output() postLiked = new EventEmitter<number>();
   @Output() postEdited = new EventEmitter<number>();
-  @Output() postDeleted = new EventEmitter<number>();
-  @Output() commentCreated = new EventEmitter<number>();
+  // @Output() postDeleted = new EventEmitter<number>();
+  // @Output() commentCreated = new EventEmitter<number>();
 
   postId!: number;
   post!: PostEditCreate;
