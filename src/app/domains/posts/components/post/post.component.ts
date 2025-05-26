@@ -16,13 +16,12 @@ import { PaginationComponent } from "@shared/components/pagination/pagination.co
 import { Pagination } from '@shared/models/pagination';
 import { environment } from '@env/enviroments.prod';
 import { NotificationService } from '@shared/notifications/notifications.service';
-import { SanitizeHtmlPipe } from '@shared/pipe/sanitize-html.pipe';
 
 @Component({
   standalone: true,
   selector: 'app-post',
   templateUrl: './post.component.html',
-  imports: [CommonModule, OverlayModule, PaginationComponent,SanitizeHtmlPipe],
+  imports: [CommonModule, OverlayModule, PaginationComponent],
 })
 export class PostComponent implements OnInit, OnDestroy {
   @Input() post!: Post;
@@ -63,7 +62,6 @@ export class PostComponent implements OnInit, OnDestroy {
           this.isOwnerOrTeamEdit = false;
           this.currentUserId = user ? user.id : -1;
           this.user = user || { id: -1, username: '', team: '' };
-          // this.checkPermissions();
         })
       )
       .subscribe();
@@ -200,7 +198,6 @@ export class PostComponent implements OnInit, OnDestroy {
     const dialogRef = this.dialog.open(DetailComponent, {
       minWidth: '75%',
       maxWidth: '100%',
-      autoFocus: false,
       data: { post: this.post },
       panelClass: 'detail-dialog-panel',
     });

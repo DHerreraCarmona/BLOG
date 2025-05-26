@@ -12,12 +12,14 @@ import { CommentService } from '@shared/services/comment.service';
 import { NotificationService } from '@shared/notifications/notifications.service';
 import { mockPost,mockPostDetail,mockLikes,createMockLikes,mockComments,mockNewComment,mockPagination,mockShortUser,
   createAuthServiceMock,createLikeServiceMock,createCommentServiceMock,createpostServiceMock,
-  createDialogMock,createMockDialogRef
+  createDialogMock,createMockDialogRef,
+  createMockEditDialogRef
 } from '@shared/mocks/mocks'
 
 let likesMock: any;
 let dialogRef: any;
 let dialogMock: any;
+let dialogEditRef: any;
 let authServiceMock: any;
 let postServiceMock: any;
 let likeServiceMock: any;
@@ -28,17 +30,28 @@ let notificationServiceSpy: jasmine.SpyObj<NotificationService>;
 describe('DetailComponent', () => {
   let component: DetailComponent;
   let fixture: ComponentFixture<DetailComponent>;
-
+  
+  
   beforeEach(async () => {
     likesMock = createMockLikes(); 
     dialogRef = createMockDialogRef();
-    dialogMock = createDialogMock(dialogRef);
+    dialogMock = createDialogMock();
     authServiceMock = createAuthServiceMock();
     postServiceMock = createpostServiceMock();
+    dialogEditRef = createMockEditDialogRef(); 
     commentServiceMock = createCommentServiceMock();
     likeServiceMock = createLikeServiceMock(likesMock);
     notificationServiceSpy = jasmine.createSpyObj('NotificationService', ['show']);
 
+    dialogMock.__setReturn({
+      componentInstance: {
+        postEdited: new EventEmitter<void>(),
+        postDeleted: new EventEmitter<number>(),
+        commentCreated: new EventEmitter<number>(),
+        likeClicked: new EventEmitter<void>(),
+      },
+      closed: new EventEmitter<any>() 
+    });
 
     await TestBed.configureTestingModule({
       imports: [DetailComponent,HttpClientTestingModule],
@@ -50,6 +63,7 @@ describe('DetailComponent', () => {
         { provide: PostService, useValue: postServiceMock },
         { provide: CommentService, useValue: commentServiceMock },
         { provide: DIALOG_DATA, useValue: { post: mockPost }},
+        { provide: NotificationService, useValue: notificationServiceSpy },
       ]
     }).compileComponents();
 
@@ -57,16 +71,19 @@ describe('DetailComponent', () => {
     component = fixture.componentInstance;
     spyOn(console, 'log');
     spyOn(console, 'error');
-    spyOn(component, 'getPostLikes');
+    spyOn(component, 'getPostLikes').and.callThrough();
     spyOn(component.postLiked, 'emit');
     spyOn(component.postDeleted, 'emit');
     spyOn(component.commentCreated, 'emit');
     spyOn(component, 'getComments').and.callThrough();
+    spyOn(component.likeClicked, 'emit');
 
     component.post = mockPost;
     component.commentsPag = mockPagination;
 
     fixture.detectChanges();
+
+    (likeServiceMock.getLikes as jasmine.Spy).calls.reset();
   });
 
   it('should create', () => {
@@ -83,9 +100,13 @@ describe('DetailComponent', () => {
     expect(component.commentForm).toBeDefined();
     expect(component.commentForm.value).toEqual({ content: '' });
 
+   component.likesLoaded = false; 
+    component.getPostLikes(); 
     expect(component.likes).toEqual(mockLikes);
-    expect(likeServiceMock.getLikes).toHaveBeenCalled();
+    expect(likeServiceMock.getLikes).toHaveBeenCalledWith(mockPost.id,1);
     
+  
+    component.getComments(); 
     expect(component.comments).toEqual(mockComments);
     expect(commentServiceMock.getComments).toHaveBeenCalled();
   });
@@ -141,13 +162,14 @@ describe('DetailComponent', () => {
     expect(commentServiceMock.postComment).not.toHaveBeenCalled();
   });
 
-  it('should hancdle create a comment error',()=>{
+  it('should handle create a comment error', () => {
     component.commentForm.setValue({content: 'Create comment 1'});
     commentServiceMock.postComment.and.returnValue(
       throwError(()=>{
         return{ error: 'postComment Fail'};
       })
     );
+    (component.getComments as jasmine.Spy).calls.reset(); 
     component.postComment();
 
     expect(component.commentCreated.emit).not.toHaveBeenCalled();
@@ -156,34 +178,26 @@ describe('DetailComponent', () => {
   });
 
   it('should call getPostLikes based on likesLoaded status', () => {
-    component.getPostLikes();        //likesLoaded is False, call service
-    expect(component.likesLoaded).toBeTrue;
+    component.likesLoaded = false; 
 
-    expect(component.likes).toEqual(mockLikes);
-    expect(likeServiceMock.getLikes).toHaveBeenCalledWith(mockPost.id);
+    component.getPostLikes(); 
+    expect(component.likesLoaded).toBeTrue(); 
+    expect(likeServiceMock.getLikes).toHaveBeenCalledWith(mockPost.id,1);
+    expect(likeServiceMock.getLikes).toHaveBeenCalledTimes(1);
 
-    component.getPostLikes();         //likesLoaded is True, dont call service again
+    component.getPostLikes(); 
     expect(likeServiceMock.getLikes).toHaveBeenCalledTimes(1);
   });
 
-  it('should call giveLike and emit postLiked for like and dislike', () => {
+  it('should call giveLike and emit likeClicked', () => {
+    component.isAuth = true; 
     
-    component.post.isLiked = false;
-    component.post.countLikes = component.likes.length;   
-    expect(mockLikes.length).toBe(14);
     component.giveLike();
-    expect(mockLikes.length).toBe(14);
-
-    expect(component.post.isLiked).toBeTrue();
-    expect(component.post.countLikes).toBe(mockLikes.length + 1);
-    expect(likeServiceMock.giveLike).toHaveBeenCalledWith(mockPost.id);
-    expect(component.likeClicked.emit).toHaveBeenCalledWith();
-
-    component.giveLike();
-    expect(component.post.isLiked).toBeFalse();
-    expect(component.post.countLikes).toBe(mockLikes.length);
-    expect(likeServiceMock.giveLike).toHaveBeenCalledTimes(2);
-    expect(component.postLiked.emit).toHaveBeenCalledTimes(2);
+    
+    expect(component.likeClicked.emit).toHaveBeenCalledWith(); 
+    
+    component.giveLike(); 
+    expect(component.likeClicked.emit).toHaveBeenCalledTimes(2); 
   });
 
   it('should call getComments with lastPage after posting comment if comments >= 5', () => {

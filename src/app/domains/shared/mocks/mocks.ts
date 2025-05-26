@@ -94,6 +94,10 @@ export function createAuthServiceMock() {
     currentUser$: currentUserSubject.asObservable(),
     fetchCsrf: jasmine.createSpy().and.returnValue(of({})),
     getUser: jasmine.createSpy().and.returnValue({ username: 'testUser' }),
+    isAuthenticated: () => authStatusSubject.value,
+
+    __setAuthStatus: (status: boolean) => authStatusSubject.next(status),
+    __setCurrentUser: (user: any) => currentUserSubject.next(user),
   };
 }
 
@@ -105,6 +109,7 @@ export function createLikeServiceMock(likes: Like[]) {
       .and.returnValue(
         of({ results: [...mockLikes], pagination: mockPagination })
       ),
+    getLikesByUser: jasmine.createSpy().and.returnValue(of(mockLikes)),
   };
 }
 
@@ -126,11 +131,13 @@ export function createpostServiceMock() {
     postEditPost: jasmine.createSpy().and.returnValue(of(mockEditPost)),
     getPostDetail: jasmine.createSpy().and.returnValue(of(mockPostDetail)),
     deletePost: jasmine.createSpy().and.returnValue(of({ success: true })),
+    getAllPosts: jasmine.createSpy().and.returnValue(1)
   };
 }
 
 export function createMockDetailDialogRef() {
   return {
+    closed:  of({}), 
     componentInstance: {
       postEdited: new EventEmitter<number>(),
       postDeleted: new EventEmitter<number>(),
@@ -140,8 +147,9 @@ export function createMockDetailDialogRef() {
   };
 }
 
-export function createMockEditDialogRef() {
+export function createMockEditDialogRef(result: any = {}) {
   return {
+    closed: of(result), 
     componentInstance: {
       postEdited: new EventEmitter<number>(),
       postCreated: new EventEmitter<number>(),
@@ -149,11 +157,14 @@ export function createMockEditDialogRef() {
   };
 }
 
-export function createDialogMock(dialogRef: any) {
-  return {
-    open: jasmine.createSpy().and.returnValue(dialogRef),
-  };
+
+export function createDialogMock() {
+  const openSpy = jasmine.createSpy('open');
+  const mock = { open: openSpy } as any; 
+  mock.__setReturn = (ref: any) => openSpy.and.returnValue(ref);
+  return mock;``
 }
+
 
 export function createMockDialogRef() {
   return {

@@ -1,5 +1,5 @@
 <header
-    class=" mx-auto w-auto max-w-screen-mdbg-white dark:bg-gray-800 py-3 shadow backdrop-blur-lg md:top-6 rounded-xl ">
+    class=" mx-auto w-auto bg-gray-800 py-3 shadow backdrop-blur-lg md:top-6 rounded-xl ">
     <div class="px-4">
         <div class="flex items-center justify-between">
             <div class="flex shrink-0">
@@ -15,7 +15,7 @@
                     href="/register">Register</a>
             </div>
             <div *ngIf="this.isAuth" class="flex ">
-                <span class=" px-2 py-2 font-semibold  text-gray-800 dark:text-gray-200 text-lg"
+                <span class=" px-2 py-2 font-semibold  text-gray-200 text-lg"
                     href="/register">welcome, {{this.username}}
                 </span>
                 <button 

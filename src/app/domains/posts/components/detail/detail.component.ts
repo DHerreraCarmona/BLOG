@@ -49,9 +49,7 @@ export class DetailComponent {
   comments: Comment[] = [];
   isAuth = false;
   user: AuthorShort = { username: '' };
-  // currentUserId: number = -1;
-  // isOwner = false;
-  // isOwnerOrTeamEdit = false;
+
 
   isDeleteViewOpen = false;
   isLikesOverlayOpen: boolean = false;
@@ -101,10 +99,6 @@ export class DetailComponent {
       })
     ).subscribe();
   }
-
-  // afterViewInit() {
-  //   this.ready.emit(this);
-  // }
 
   getPostDetail(): void {
     this.postService.getPostDetail(this.post.id).subscribe({
@@ -231,11 +225,6 @@ export class DetailComponent {
       }
     });
   }
-
-  // checkPermissions(): void {
-  //   this.isOwner = this.post.author.id === this.currentUserId;
-  //   this.isOwnerOrTeamEdit = this.isOwner || this.post.author.team === this.authService.getUser().team;
-  // }
 
   toggleLikesOverlay(event: MouseEvent) {
     this.isLikesOverlayOpen = !this.isLikesOverlayOpen;

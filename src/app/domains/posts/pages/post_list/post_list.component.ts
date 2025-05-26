@@ -67,7 +67,7 @@ export class PostListComponent {
     }
   }
 
-  private loadPosts(page: number = 1): void {
+  loadPosts(page: number = 1): void {
     this.authService.authStatus$.pipe(
       switchMap(isAuth => {
         if (!isAuth) {

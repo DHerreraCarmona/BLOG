@@ -1,14 +1,14 @@
 <div class='mb-4 rounded-xl relative overflow-hidden' (dblclick)="openDetailModal()"
      [ngClass]="{'h-auto': !isDeleteViewOpen, 'min-h-[200px]': isDeleteViewOpen}">
     <div *ngIf="!isDeleteViewOpen"
-         class='bg-white dark:bg-gray-800 dark:text-gray-100  py-3 md:px-4 h-full'>
+         class='bg-gray-800 text-gray-100  py-3 md:px-4 h-full'>
         <div class="mx-6">
             <div class=" items-center justify-between sm:flex">
                 <div>
                     <span class="font-bold text-3xl">{{post.title}} </span>
                 </div>
                 <div class="flex items-end-safe md:w-2/5 gap-3 ">
-                    <div [hidden]="post.author.team === 'None'"  class="text-green-600 text-xs bg-white dark:bg-gray-600 rounded-sm p-1">{{post.author.team}}</div>
+                    <div [hidden]="post.author.team === 'None'"  class="text-green-600 text-xs bg-gray-600 rounded-sm p-1">{{post.author.team}}</div>
                     <div class="text-gray-300 font-bold">{{post.author.username}}</div>
                     <div class="text-sm text-gray-400">{{ post.created_at | date: 'dd/MM/yyyy HH:mm:ss' }}</div>
                 </div>
@@ -113,7 +113,7 @@
         [cdkConnectedOverlayOrigin]="likesOverlay"
         [cdkConnectedOverlayOpen]="isLikesOverlayOpen"
         >
-            <div class=" min-w-50 max-w-100 text-base bg-white dark:bg-gray-700 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700"
+            <div class=" min-w-50 max-w-100 text-base bg-gray-700 rounded-xl shadow-lg border border-gray-700"
                 (mouseover)="isLikesOverlayOpen=true; clearCloseTimeout()"
                 (mouseleave)="startCloseTimeout()"
             >
@@ -126,7 +126,7 @@
                 <ul >
                     <li
                     *ngFor="let like of likes"
-                    class="px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-900 dark:text-white"
+                    class="px-3 py-2 rounded-md hover:bg-gray-700 text-white"
                     >
                     {{ like.author.username }}
                     </li>
@@ -138,25 +138,25 @@
     <div *ngIf="isDeleteViewOpen"
          class="absolute top-0 left-0 w-full h-full bg-red-500 rounded-xl flex items-center justify-center">
         <div class="text-center">
-            <svg class="mx-auto mb-2 text-gray-400 w-10 h-10 dark:text-gray-200" aria-hidden="true"
+            <svg class="mx-auto mb-2  w-10 h-10 text-gray-200" aria-hidden="true"
                  xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
                 <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                       d="M10 11V6m0 8h.01M19 10a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
             </svg>
-            <h3 class=" text-lg  text-gray-500 font-semibold dark:text-gray-100">
+            <h3 class=" text-lg  font-semibold text-gray-100">
                 Are you sure you want to delete this product?
             </h3>
-            <h3 class="mb-5 text-s font-normal text-gray-500 dark:text-gray-100">
+            <h3 class="mb-5 text-s font-normal text-gray-100">
                {{post.title}}
             </h3>
 
             <button type="button" (click)="deletePost()"
-                class="text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 dark:focus:ring-red-800 font-medium rounded-lg text-sm inline-flex items-center px-5 py-2.5 text-center"
+                class="text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-800 font-medium rounded-lg text-sm inline-flex items-center px-5 py-2.5 text-center"
             >
                 Yes, I'm sure
             </button>
             <button type="button" (click)="isDeleteViewOpen=false"
-                class="py-2.5 px-5 ms-3 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-100 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700"
+                class="py-2.5 px-5 ms-3 text-sm font-medium  focus:outline-none  rounded-lg border focus:z-10 focus:ring-4 focus:ring-gray-700 bg-gray-800 text-gray-400 border-gray-600 hover:text-white hover:bg-gray-700"
             >
             No, cancel
             </button>

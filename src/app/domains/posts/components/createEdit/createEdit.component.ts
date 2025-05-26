@@ -25,7 +25,7 @@ export class CreateEditComponent {
       ['bold', 'italic', 'underline'],
       [{ 'list': 'ordered'}, { 'list': 'bullet' }],
       [{ 'header': [1, 2, 3, false] }],
-      ['link','code-block', 'blockquote', 'image', 'video'],
+      ['link','code-block', 'blockquote', 'image'],
     ]
   };
 
