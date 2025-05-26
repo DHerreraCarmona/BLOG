@@ -3,6 +3,7 @@ import { Dialog} from '@angular/cdk/dialog';
 import { CommonModule } from '@angular/common';
 import { Component, Inject,ChangeDetectorRef, EventEmitter, Output } from '@angular/core';
 import { DialogRef,DIALOG_DATA } from '@angular/cdk/dialog';
+import { QuillModule } from 'ngx-quill';
 
 import { Post, PostDetail, PostEditCreate } from '@shared/models/post';
 import { PostService } from '@shared/services/post.service';
@@ -12,15 +13,21 @@ import { NotificationService } from '@shared/notifications/notifications.service
 @Component({
   selector: 'app-create-edit',
   standalone:true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule,QuillModule],
   templateUrl: './createEdit.component.html',
 })
 export class CreateEditComponent {
   @Output() postCreated = new EventEmitter();
-  // @Output() postLiked = new EventEmitter<number>();
   @Output() postEdited = new EventEmitter<number>();
-  // @Output() postDeleted = new EventEmitter<number>();
-  // @Output() commentCreated = new EventEmitter<number>();
+
+  quillConfig = {
+    toolbar: [
+      ['bold', 'italic', 'underline'],
+      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+      [{ 'header': [1, 2, 3, false] }],
+      ['link','code-block', 'blockquote', 'image', 'video'],
+    ]
+  };
 
   postId!: number;
   post!: PostEditCreate;
@@ -62,6 +69,9 @@ export class CreateEditComponent {
   }
 
   onSubmit() {
+    this.post.title = this.post.title.trim();
+    this.post.content = this.post.content.trim();
+    
     if (!this.post.title || !this.post.content) {
       this.notificationService.show(`Title and content cannot be empty.`, 'error');
       return;

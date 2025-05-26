@@ -31,7 +31,7 @@ export class LayoutComponent {
   openCreateModal(){
     const dialogDetailRef = this.dialog.open(CreateEditComponent,
       { minWidth: '75%',
-        maxWidth: '75%',
+        maxWidth: '100%',
         data:{
           isCreate: true
         }

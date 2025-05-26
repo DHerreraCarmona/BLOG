@@ -1,12 +1,13 @@
 <div class="
        container mx-auto bg-white dark:bg-gray-800 shadow-lg rounded-lg
-       text-gray-800 dark:text-gray-200
+       text-gray-800 dark:text-gray-200 max-w-3xl
        max-h-[90vh] overflow-auto no-scrollbar
      ">
     <div class=" shadow-lg rounded-lg overflow-hidden ">
       <div class="p-6 pb-2">
         <div class="flex justify-between items-center mb-4">
-            <h1 class="text-3xl font-bold mb-4">{{post.title}}</h1>
+            <h1 class="text-3xl sm:text-3xl font-semibold mb-3 break-words">{{post.title}}</h1>
+
             <button type="button" (click)="close()"
                     class="text-gray-400 hover:text-gray-900 dark:hover:text-white">
               <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
@@ -15,14 +16,12 @@
               </svg>
             </button>
           </div>
-        <div class="text-sm text-gray-600 dark:text-gray-400 flex justify-between items-center">
-            <span>{{post.created_at | date}}</span>
-            <span>{{post.author.username}}</span>
-            <span class="text-green-500 dark:text-green-400">
-                {{post.author.team}}
-            </span>
+        <div class="text-sm text-gray-600 dark:text-gray-400 flex justify-self-start gap-4">
+            <div class="text-gray-300 font-bold">{{post.author.username}}</div>
+            <div *ngIf="post.author.team!='None'" class="text-green-600 text-xs bg-white dark:bg-gray-600 rounded-sm p-1">{{post.author.team}}</div>
+            <div class="text-sm text-gray-400">{{ post.created_at | date: 'dd/MM/yyyy HH:mm:ss' }}</div>
         </div>
-        <p class="text-gray-700 dark:text-gray-300 text-lg mb-4">{{content}}</p>
+        <p class="text-gray-700 dark:text-gray-300 text-lg mb-4" [innerHTML]="content"></p>
         <div class="flex justify-between mt-4 pb-1 text-sm text-gray-600 fill-current">
             <div class="flex items-center">
                 <!-- like button -->
@@ -58,7 +57,9 @@
                 (mouseleave)="startCloseTimeout()"
                 cdkOverlayOrigin #likesOverlay="cdkOverlayOrigin"
                 >
-                    {{post.countLikes}} likes
+                    {{post.countLikes}} 
+                    <span *ngIf="post.countLikes==1">like</span>
+                    <span *ngIf="post.countLikes!=1">likes</span>
                 </span>
             </div>
             <div class="flex text-grey" *ngIf="post.isOwnerOrTeamEdit">
@@ -90,10 +91,20 @@
         <h2 class="text-2xl font-bold mb-1">Comments</h2>
         <span *ngIf="comments.length==0" class="text-gray-400 font-sm"> No comments yet</span>
 
+        <div *ngIf="commentsPag && commentsPag.total_pages > 1">
+            <app-pagination
+            [pagination]="commentsPag"
+            (changePage)="getComments($event)">
+            </app-pagination>
+        </div>
+
         <div *ngFor="let comment of comments">
-            <div class="mb-4 py-4 px-4 bg-gray-100 dark:bg-gray-700 rounded-lg">
+            <div class="mb-2 px-3 py-2 bg-gray-100 dark:bg-gray-700 rounded-md shadow-sm">
+
+
                 <p class="text-gray-700 dark:text-gray-300">{{comment.content}}</p>
-                <div class="flex justify-between items-center text-sm text-gray-500 dark:text-gray-400 mt-2">
+                <div class="flex justify-between items-center text-xs text-gray-500 dark:text-gray-400 mt-1">
+
                     <span class="font-semibold">{{comment.author.username}}</span>
                     <span>{{comment.created_at | date}}</span>
                 </div>

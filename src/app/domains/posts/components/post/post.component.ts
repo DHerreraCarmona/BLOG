@@ -16,12 +16,13 @@ import { PaginationComponent } from "@shared/components/pagination/pagination.co
 import { Pagination } from '@shared/models/pagination';
 import { environment } from '@env/enviroments.prod';
 import { NotificationService } from '@shared/notifications/notifications.service';
+import { SanitizeHtmlPipe } from '@shared/pipe/sanitize-html.pipe';
 
 @Component({
   standalone: true,
   selector: 'app-post',
   templateUrl: './post.component.html',
-  imports: [CommonModule, OverlayModule, PaginationComponent],
+  imports: [CommonModule, OverlayModule, PaginationComponent,SanitizeHtmlPipe],
 })
 export class PostComponent implements OnInit, OnDestroy {
   @Input() post!: Post;
@@ -48,7 +49,7 @@ export class PostComponent implements OnInit, OnDestroy {
     private likeService: LikeService,
     private authService: AuthService,
     private postService: PostService,
-    private notificationService: NotificationService 
+    private notificationService: NotificationService,
   ) {}
 
   ngOnInit(): void {
@@ -204,13 +205,10 @@ export class PostComponent implements OnInit, OnDestroy {
       panelClass: 'detail-dialog-panel',
     });
 
-    // const sub = setInterval(() => {
       if (dialogRef.componentInstance) {
-        // clearInterval(sub);
 
         dialogRef.componentInstance.postEdited.subscribe(_ => {
           this.postEdited.emit();
-          // this.openEditModal();
         });
 
         dialogRef.componentInstance.postDeleted.subscribe(deletedPostId => {
@@ -228,7 +226,6 @@ export class PostComponent implements OnInit, OnDestroy {
           this.giveLike();
         });
       }
-    // }, 50);
   }
 
   closeTimeoutId: any;

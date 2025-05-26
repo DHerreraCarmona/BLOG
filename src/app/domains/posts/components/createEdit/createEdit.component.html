@@ -1,5 +1,7 @@
-<div class="flex items-center justify-center" >
-  <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg w-full max-w-lg p-6 relative"
+<div class="container mx-auto bg-gray-800 shadow-lg rounded-lg max-w-3xl
+    text-gray-200
+       max-h-[75vh] overflow-auto no-scrollbar" >
+  <div class="bg-gray-800 rounded-lg shadow-lg w-auto  p-6 relative"
        (click)="$event.stopPropagation()">
     <!-- Modal header -->
     <div class="flex justify-between items-center mb-4">
@@ -18,9 +20,9 @@
     <form>
       <!-- Title -->
       <div class="mb-4">
-        <label for="title" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Title</label>
+        <label for="title" class="block text-sm font-medium  text-gray-300">Title</label>
         <input type="text" id="title" name="title" 
-               class="w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 dark:bg-gray-700 dark:text-white"
+               class="w-full rounded-lg border border-gray-300 p-2.5 text-sm  bg-gray-700 text-white placeholder-gray-400"
                placeholder="Post title Here"
                [(ngModel)]="post.title">
       </div>
@@ -28,10 +30,14 @@
       <!-- Content -->
       <div class="mb-4">
         <label for="content" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Content</label>
-        <textarea id="content" name="content" rows="5"
-            class="w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 dark:bg-gray-700 dark:text-white"
-            placeholder="Write your post content here"
-            [(ngModel)]="post.content"></textarea>
+        <quill-editor
+          [(ngModel)]="post.content"
+          name="content"
+          [modules]="quillConfig"
+          placeholder="Write your post content here"
+          class="w-full mt-2 rounded-lg text-sm border border-gray-600  bg-gray-700 "
+        >
+        </quill-editor>
       </div>
 
       <!-- Access Levels -->
