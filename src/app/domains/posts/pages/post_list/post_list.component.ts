@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { catchError, filter, forkJoin, map, of, switchMap, take, tap } from 'rxjs';
+import { catchError, delay, filter, forkJoin, map, of, switchMap, take, tap } from 'rxjs';
 
 import { AuthorPost } from '@shared/models/author';
 import { Pagination } from '@shared/models/pagination';
@@ -40,15 +40,15 @@ export class PostListComponent {
   }
 
   onPostDeleted(): void {
-    this.loadPosts(this.pagination?.current_page);
+    of(null).pipe(delay(50)).subscribe(() =>this.loadPosts(this.pagination?.current_page));
   }
 
   onPostEdit(): void {
-    this.loadPosts(this.pagination?.current_page);
+    of(null).pipe(delay(50)).subscribe(() => this.loadPosts(this.pagination?.current_page));
   }
 
   onPostCreate(): void {
-    this.loadPosts(this.pagination?.current_page);
+    of(null).pipe(delay(50)).subscribe(() =>this.loadPosts(this.pagination?.current_page));
   }
   
   onPostLiked(data: { id: number, isLiked: boolean, countLikes: number }): void {

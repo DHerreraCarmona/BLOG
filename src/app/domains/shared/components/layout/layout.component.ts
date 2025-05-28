@@ -9,6 +9,7 @@ import { CreateEditComponent } from '@post/components/createEdit/createEdit.comp
 import { CommonModule } from '@angular/common';
 import { AuthService } from '@shared/services/auth.service';
 import { Observable } from 'rxjs';
+import { PostEditCreate } from '@shared/models/post';
 
 @Component({
   selector: 'app-layout',
@@ -40,6 +41,7 @@ export class LayoutComponent {
     if(dialogDetailRef.componentInstance ){
       dialogDetailRef.componentInstance.postCreated.subscribe(_=>{
         this.postListComponent.onPostCreate();
+        
       })
     }
   }

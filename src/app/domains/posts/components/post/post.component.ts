@@ -118,7 +118,7 @@ export class PostComponent implements OnInit, OnDestroy {
 
 
         if (this.post.isLiked) {
-          if (this.likesPag && this.likes.length >= 15) {
+          if (this.likesPag && this.likes.length >= 1) {
             this.likesLoaded = false;
             this.getPostLikes();
           } else {

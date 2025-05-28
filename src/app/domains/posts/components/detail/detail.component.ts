@@ -137,7 +137,6 @@ export class DetailComponent {
       },
       error: (error) => {
         this.notificationService.show('Error fetching post comments', 'error');
-
       },
     });
   }
@@ -170,7 +169,7 @@ export class DetailComponent {
         this.commentCreated.emit(this.post.id);
 
         if (this.commentsPag && this.comments.length >= 5) {
-          const lastPage = this.commentsPag.total_pages + 1;
+          const lastPage = this.commentsPag.total_pages;
           this.getComments(lastPage);
         } else {
           this.getComments();
